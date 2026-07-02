@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
+import { StoryPost } from './StoryUploadModal';
 
-// 1. ストーリーのデータ構造を定義
 interface StoryItem {
   id: string;
-  mediaUrl: string; // 画像や動画のURL
+  mediaUrl: string;
   type: 'image' | 'video';
 }
 
@@ -11,18 +11,17 @@ interface UserStory {
   userId: string;
   username: string;
   avatarUrl: string;
-  hasUnread: boolean; // 未読があるか（ピンクのグラデーション枠用）
+  hasUnread: boolean;
   stories: StoryItem[];
 }
 
-// サンプルデータ
 const SAMPLE_STORIES: UserStory[] = [
   {
-    userId: '1',
+    userId: '1', // userId: '1' を自分（My Story）と定義します
     username: 'My Story',
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
     hasUnread: false,
-    stories: [{ id: 's1', mediaUrl: 'https://picsum.photos/400/700', type: 'image' }]
+    stories: [] // 初期状態はストーリー未投稿（空）とします
   },
   {
     userId: '2',
@@ -41,73 +40,127 @@ const SAMPLE_STORIES: UserStory[] = [
 ];
 
 export function StoryList() {
-  // 現在アクティブ（全画面表示中）のユーザーのインデックス
+  // 全画面ストーリー閲覧用の状態
   const [activeUserIndex, setActiveUserIndex] = useState<number | null>(null);
+  
+  // 【新設】ストーリー投稿画面（StoryPost）の開閉フラグ
+  const [isPostOpen, setIsPostOpen] = useState(false);
+
+  // リスト内のアイコンがクリックされた時の処理
+  const handleUserClick = (index: number, userId: string) => {
+    if (userId === '1') {
+      // 自分のアイコン（My Story）がタップされたら投稿画面を開く
+      setIsPostOpen(true);
+    } else {
+      // 他人のアイコンならストーリー閲覧画面を開く
+      setActiveUserIndex(index);
+    }
+  };
+
+  // 実際に投稿されたデータを受け取る処理（後のバックエンド連携用）
+  const handleNewPost = (postData: any) => {
+    console.log("新しいストーリー投稿データ:", postData);
+    // ここで状態を更新したり、PHPのAPIを叩いてDBに保存します
+  };
 
   return (
     <div style={{ padding: '16px 0', backgroundColor: '#FFFFFF', borderBottom: '1px solid #EFEFEF' }}>
       
-      {/* 2. インスタ風の横スクロールコンテナ */}
+      {/* インスタ風横スクロールコンテナ */}
       <div style={{
         display: 'flex',
         gap: '16px',
         overflowX: 'auto',
         padding: '0 16px',
-        scrollbarWidth: 'none', // Firefox用スクロールバー非表示
+        scrollbarWidth: 'none',
       }}>
-        {/* Webkit系（Chrome/Safari）用スクロールバー非表示 */}
         <style>{`div::-webkit-scrollbar { display: none; }`}</style>
 
-        {SAMPLE_STORIES.map((user, index) => (
-          <div 
-            key={user.userId} 
-            onClick={() => setActiveUserIndex(index)}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', flexShrink: 0 }}
-          >
-            {/* 3. アイコンのグラデーション枠（未読ならインスタ色、既読ならグレー） */}
-            <div style={{
-              width: '68px',
-              height: '68px',
-              borderRadius: '50%',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              background: user.hasUnread 
-                ? 'linear-gradient(45deg, #fbc116, #fa1e4e, #b937b2)' // インスタ風グラデーション
-                : '#EAEAEA',
-              padding: '2px' // 枠線の太さ
-            }}>
-              {/* 白い隙間枠 */}
+        {SAMPLE_STORIES.map((user, index) => {
+          const isMe = user.userId === '1'; // 自分かどうかを判定
+
+          return (
+            <div 
+              key={user.userId} 
+              onClick={() => handleUserClick(index, user.userId)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', flexShrink: 0, position: 'relative' }}
+            >
+              {/* アイコンのグラデーション枠 */}
               <div style={{
-                width: '100%',
-                height: '100%',
+                width: '68px',
+                height: '68px',
                 borderRadius: '50%',
-                backgroundColor: '#FFFFFF',
                 display: 'flex',
                 justifyContent: 'center',
-                alignItems: 'center'
+                alignItems: 'center',
+                background: user.hasUnread 
+                  ? 'linear-gradient(45deg, #fbc116, #fa1e4e, #b937b2)'
+                  : '#EAEAEA',
+                padding: '2px'
               }}>
-                <img 
-                  src={user.avatarUrl} 
-                  alt={user.username} 
-                  style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }}
-                />
+                {/* 白い隙間枠 */}
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFFFFF',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <img 
+                    src={user.avatarUrl} 
+                    alt={user.username} 
+                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* ユーザーネーム */}
-            <span style={{ fontSize: '11px', color: '#262626', maxWidth: '68px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user.username}
-            </span>
-          </div>
-        ))}
+              {/* 【新設】自分のアイコンの右下に青い「＋」ボタンを配置 */}
+              {isMe && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '20px', // 文字列との被りを防ぐ配置調整
+                  right: '2px',
+                  backgroundColor: '#4A90E2',
+                  color: '#FFFFFF',
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  border: '2px solid #FFFFFF', // インスタ同様、白いフチを付ける
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                }}>
+                  +
+                </div>
+              )}
+
+              {/* ユーザーネーム */}
+              <span style={{ fontSize: '11px', color: '#262626', maxWidth: '68px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.username}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* 4. ここに後ほど全画面表示用の「ストーリー閲覧モーダル」を組み込む */}
+      {/* A. ストーリー閲覧モーダル */}
       {activeUserIndex !== null && (
         <div style={{ position: 'fixed', top:0, left:0, width:'100vw', height:'100vh', backgroundColor:'#1a1a1a', zIndex: 10000, color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setActiveUserIndex(null)}>
           <p>{SAMPLE_STORIES[activeUserIndex].username}のストーリー（タップで閉じる）</p>
         </div>
+      )}
+
+      {/* B. 【新設】ストーリー投稿モーダル（isPostOpenがtrueのときに起動） */}
+      {isPostOpen && (
+        <StoryPost 
+          onClose={() => setIsPostOpen(false)} 
+          onPost={handleNewPost}
+        />
       )}
 
     </div>
