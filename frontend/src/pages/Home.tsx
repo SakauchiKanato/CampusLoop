@@ -14,8 +14,8 @@ export const Home: React.FC<HomeProps> = ({ userStories, onPostStory }) => {
       <h1 style={{ color: '#3182ce', margin: '0 0 10px 0' }}>CampusLoop</h1>
       
       <div style={{ marginTop: '10px' }}>
-        <StoryList userStories={userStories} onPostStory={onPostStory} />
         <Timetable />
+        <StoryList userStories={userStories} onPostStory={onPostStory} />
         <EventList currentEmptyPeriod={3} />
       </div>
     </div>
