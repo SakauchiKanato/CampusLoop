@@ -116,7 +116,7 @@ export const StoryViewModal: React.FC<StoryViewModalProps> = ({ userStory, onClo
             <div style={{ width: '100%', height: '100%', backgroundColor: '#FFFFFF' }} />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justify_content: 'space-between', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <img 
                 src={userStory.avatarUrl} 

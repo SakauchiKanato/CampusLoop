@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Timetable as CalendarPage } from './components/Timetable';
@@ -47,13 +47,23 @@ const INITIAL_STORIES: UserStory[] = [
   },
 ];
 
+interface LoggedInUser {
+  id: number;
+  username: string;
+  campus: string;
+}
+
 function App() {
-  const [user, setUser] = useState<string | null>(null);
+  const [user, setUser] = useState<LoggedInUser | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'calendar' | 'profile'>('home');
   const [userStories, setUserStories] = useState<UserStory[]>(INITIAL_STORIES);
 
-  const handleLogin = (username: string) => {
-    setUser(username);
+  const handleLogin = (loggedInUser: LoggedInUser) => {
+    setUser(loggedInUser);
+    // My Story のアバターをログインユーザー名に更新
+    setUserStories(prev => prev.map(s =>
+      s.userId === '1' ? { ...s, username: loggedInUser.username } : s
+    ));
     setActiveTab('home');
   };
 
@@ -106,7 +116,7 @@ function App() {
       )}
       
       {activeTab === 'profile' && (
-        <Profile username={user} myStories={myStories} />
+        <Profile username={user?.username ?? ''} myStories={myStories} />
       )}
 
       <Navigation 

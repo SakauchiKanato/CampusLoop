@@ -1,4 +1,3 @@
-import React from 'react';
 
 // 1. イベントデータの型定義
 interface CampusEvent {
