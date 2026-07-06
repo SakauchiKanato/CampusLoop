@@ -10,7 +10,7 @@
  * }
  *
  * レスポンス (JSON):
- * 成功: { "success": true, "user": { "id": 1, "username": "...", "campus": "..." } }
+ * 成功: { "success": true, "user": { "id": 1, "username": "...", "campus": "...", "faculty": "...", "circle": "..." } }
  * 失敗: { "success": false, "message": "エラーメッセージ" }
  */
 
@@ -36,11 +36,11 @@ if (empty($username) || empty($password)) {
 $pdo = get_db();
 
 // ユーザーをDBから取得
-$stmt = $pdo->prepare('SELECT id, username, password_hash, campus FROM users WHERE username = :username');
+$stmt = $pdo->prepare('SELECT id, username, password_hash, campus, faculty, circle FROM users WHERE username = :username');
 $stmt->execute([':username' => $username]);
 $user = $stmt->fetch();
 
-// ユーザーが存在しない、またはパスワードが違う場合（セキュリティのため同じメッセージを返す）
+// ユーザーが存在しない、またはパスワードが違う場合
 if (!$user || !password_verify($password, $user['password_hash'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'ユーザー名またはパスワードが正しくありません。']);
@@ -54,5 +54,7 @@ echo json_encode([
         'id'       => (int)$user['id'],
         'username' => $user['username'],
         'campus'   => $user['campus'],
+        'faculty'  => $user['faculty'],
+        'circle'   => $user['circle'],
     ]
 ]);
