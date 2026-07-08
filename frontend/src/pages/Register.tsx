@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Flex, VStack, Heading, Input, Button, Text, Select } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Input, Button, Text } from '@yamada-ui/react';
 import { API_ENDPOINTS, apiPost } from '../lib/api';
 
 const FACULTY_OPTIONS = [
@@ -119,27 +119,43 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
           <Flex gap="sm" w="full">
             <Box flex={2}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">学部</Text>
-              <Select
+              <Box
+                as="select"
                 value={faculty}
-                onChange={(val) => setFaculty(val as string)}
-                placeholder="学部を選択"
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFaculty(e.target.value)}
+                w="full"
+                p="sm"
+                border="1px solid"
+                borderColor="gray.200"
+                borderRadius="md"
+                bg="white"
+                fontSize="sm"
               >
+                <option value="">学部を選択</option>
                 {FACULTY_OPTIONS.map((f) => (
                   <option key={f} value={f}>{f}</option>
                 ))}
-              </Select>
+              </Box>
             </Box>
             <Box flex={1}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">学年</Text>
-              <Select
+              <Box
+                as="select"
                 value={year}
-                onChange={(val) => setYear(val as string)}
-                placeholder="学年"
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYear(e.target.value)}
+                w="full"
+                p="sm"
+                border="1px solid"
+                borderColor="gray.200"
+                borderRadius="md"
+                bg="white"
+                fontSize="sm"
               >
+                <option value="">学年</option>
                 {YEAR_OPTIONS.map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
-              </Select>
+              </Box>
             </Box>
           </Flex>
 
