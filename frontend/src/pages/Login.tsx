@@ -25,7 +25,7 @@ export default function Login({ onLogin, onGoRegister }: { onLogin: (user: any) 
         setError(res.message || 'ユーザー名またはパスワードが正しくありません。');
       }
     } catch (err) {
-      setError('サーバーとの通信に失敗しました。');
+      setError(err instanceof Error ? err.message : 'サーバーとの通信に失敗しました。');
     } finally {
       setIsLoading(false);
     }
