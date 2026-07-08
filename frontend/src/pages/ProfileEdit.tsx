@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Flex, VStack, Heading, Input, Button, Text, Select } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Input, Button, Text } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiPut } from '../lib/api';
 import type { LoggedInUser } from '../App';
@@ -121,26 +121,50 @@ export default function ProfileEdit({ user, onProfileUpdate }: ProfileEditProps)
 
           <Box>
             <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">ユーザー名</Text>
-            <Input value={user?.username || ''} isDisabled bg="gray.50" />
+            <Input value={user?.username || ''} disabled bg="gray.50" />
             <Text fontSize="xs" color="gray.400" mt="xs">ユーザー名は変更できません</Text>
           </Box>
 
           <Flex gap="sm">
             <Box flex={2}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">学部</Text>
-              <Select value={faculty} onChange={(val) => setFaculty(val as string)} placeholder="学部を選択">
+              <Box
+                as="select"
+                value={faculty}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFaculty(e.target.value)}
+                w="full"
+                p="sm"
+                border="1px solid"
+                borderColor="gray.200"
+                borderRadius="md"
+                bg="white"
+                fontSize="sm"
+              >
+                <option value="">学部を選択</option>
                 {FACULTY_OPTIONS.map((f) => (
                   <option key={f} value={f}>{f}</option>
                 ))}
-              </Select>
+              </Box>
             </Box>
             <Box flex={1}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">学年</Text>
-              <Select value={year} onChange={(val) => setYear(val as string)} placeholder="学年">
+              <Box
+                as="select"
+                value={year}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYear(e.target.value)}
+                w="full"
+                p="sm"
+                border="1px solid"
+                borderColor="gray.200"
+                borderRadius="md"
+                bg="white"
+                fontSize="sm"
+              >
+                <option value="">学年</option>
                 {['1年', '2年', '3年', '4年'].map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
-              </Select>
+              </Box>
             </Box>
           </Flex>
 
@@ -155,11 +179,22 @@ export default function ProfileEdit({ user, onProfileUpdate }: ProfileEditProps)
 
           <Box>
             <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">キャンパス</Text>
-            <Select value={campus} onChange={(val) => setCampus(val as string)}>
+            <Box
+              as="select"
+              value={campus}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCampus(e.target.value)}
+              w="full"
+              p="sm"
+              border="1px solid"
+              borderColor="gray.200"
+              borderRadius="md"
+              bg="white"
+              fontSize="sm"
+            >
               {CAMPUS_OPTIONS.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
-            </Select>
+            </Box>
           </Box>
 
           <Button type="submit" colorScheme="blue" w="full" mt="sm" loading={isLoading}>

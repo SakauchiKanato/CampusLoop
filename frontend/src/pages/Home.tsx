@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button, Spinner } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
@@ -14,12 +14,14 @@ interface TimetableSlot {
 }
 
 interface MatchCandidate {
-  user_id: number;
+  friend_id: number;
   username: string;
   faculty: string;
+  circle: string;
   status_level: string;
-  status_comment: string;
-  free_periods: number[];
+  status_comment: string | null;
+  match_id: number | null;
+  match_status: string | null;
 }
 
 export default function Home({ user }: { user: LoggedInUser | null }) {
@@ -34,6 +36,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
 
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
   const [matchCandidates, setMatchCandidates] = useState<MatchCandidate[]>([]);
+  const [matchPeriod, setMatchPeriod] = useState<number | null>(null);
   const [loadingTimetable, setLoadingTimetable] = useState(true);
   const [loadingMatches, setLoadingMatches] = useState(true);
 
@@ -58,7 +61,6 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   useEffect(() => {
     if (!user) return;
     fetchTimetable();
-    fetchMatches();
   }, [user]);
 
   const fetchTimetable = async () => {
@@ -67,37 +69,52 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
       // 土日はDB上にデータがないので空配列を表示
       if (todayDb === 0 || todayDb === 6) {
         setTimetable([]);
+        setLoadingMatches(false);
         return;
       }
-      const res = await apiGet<{ success: boolean; timetable?: TimetableSlot[] }>(
-        `${API_ENDPOINTS.timetable}?user_id=${user!.id}&day_of_week=${todayDb}`
+      // timetable.php は全曜日分を返すので、今日の曜日で絞り込む
+      const res = await apiGet<{ success: boolean; timetable?: (TimetableSlot & { day_of_week: number })[] }>(
+        `${API_ENDPOINTS.timetable}?user_id=${user!.id}`
       );
+      let filled: TimetableSlot[];
       if (res.success && res.timetable) {
+        const todayRows = res.timetable.filter((t) => t.day_of_week === todayDb);
         // 1〜5限のスロットを全て埋める（データがない時限は空きとして扱う）
-        const filled: TimetableSlot[] = [1, 2, 3, 4, 5].map((p) => {
-          const found = res.timetable!.find((t) => t.period === p);
+        filled = [1, 2, 3, 4, 5].map((p) => {
+          const found = todayRows.find((t) => t.period === p);
           return found ?? { period: p, subject: null, is_free: true };
         });
-        setTimetable(filled);
       } else {
         // データがない場合は全コマ空き
-        setTimetable([1, 2, 3, 4, 5].map((p) => ({ period: p, subject: null, is_free: true })));
+        filled = [1, 2, 3, 4, 5].map((p) => ({ period: p, subject: null, is_free: true }));
+      }
+      setTimetable(filled);
+
+      // 今日の最初の空きコマを対象にマッチ候補を取得
+      const freePeriod = filled.find((t) => t.is_free)?.period ?? null;
+      setMatchPeriod(freePeriod);
+      if (freePeriod) {
+        fetchMatches(freePeriod);
+      } else {
+        setMatchCandidates([]);
+        setLoadingMatches(false);
       }
     } catch {
       setTimetable([]);
+      setLoadingMatches(false);
     } finally {
       setLoadingTimetable(false);
     }
   };
 
-  const fetchMatches = async () => {
+  const fetchMatches = async (period: number) => {
     setLoadingMatches(true);
     try {
-      const res = await apiGet<{ success: boolean; matches?: MatchCandidate[] }>(
-        `${API_ENDPOINTS.matches}?user_id=${user!.id}`
+      const res = await apiGet<{ success: boolean; candidates?: MatchCandidate[] }>(
+        `${API_ENDPOINTS.matches}?user_id=${user!.id}&day_of_week=${todayDb}&period=${period}`
       );
-      if (res.success && res.matches) {
-        setMatchCandidates(res.matches);
+      if (res.success && res.candidates) {
+        setMatchCandidates(res.candidates);
       } else {
         setMatchCandidates([]);
       }
@@ -109,15 +126,15 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   };
 
   const handleInvite = async (toUserId: number) => {
-    // 現在の空きコマの最初のものを取得
-    const freePeriod = timetable.find((t) => t.is_free)?.period ?? 3;
+    if (!matchPeriod) return;
     try {
-      await apiPost<{ success: boolean }>(`${API_ENDPOINTS.matches}`, {
+      const res = await apiPost<{ success: boolean; message?: string }>(`${API_ENDPOINTS.matches}`, {
         from_user: user!.id,
         to_user: toUserId,
-        period: freePeriod,
+        period: matchPeriod,
       });
-      alert('誘いを送りました！');
+      alert(res.success ? '誘いを送りました！' : (res.message || '誘いの送信に失敗しました。'));
+      fetchMatches(matchPeriod);
     } catch {
       alert('誘いの送信に失敗しました。');
     }
@@ -138,7 +155,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
             <Text fontSize="sm">今日は{todayName}曜日です。授業はお休みです 🎉</Text>
           </Box>
         ) : loadingTimetable ? (
-          <Flex justify="center" py="lg"><Spinner size="sm" /></Flex>
+          <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
         ) : (
           <Grid templateColumns="repeat(5, 1fr)" gap="sm" mb="md">
             {timetable.map((item) => (
@@ -178,11 +195,11 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
       {/* マッチ候補セクション */}
       <Box>
         <Heading as="h2" size="md" display="flex" alignItems="center" gap="xs" mb="md">
-          🔥 空きコマのマッチ候補
+          🔥 {matchPeriod ? `${matchPeriod}限（空きコマ）のマッチ候補` : '空きコマのマッチ候補'}
         </Heading>
 
         {loadingMatches ? (
-          <Flex justify="center" py="lg"><Spinner size="sm" /></Flex>
+          <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
         ) : matchCandidates.length === 0 ? (
           <Box
             bg="white"
@@ -200,7 +217,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
           <Grid templateColumns="repeat(auto-fill, minmax(140px, 1fr))" gap="md">
             {matchCandidates.map((candidate) => (
               <Box
-                key={candidate.user_id}
+                key={candidate.friend_id}
                 border="1px solid"
                 borderColor="gray.200"
                 borderRadius="md"
@@ -218,9 +235,19 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
                     <Box w="8px" h="8px" borderRadius="full" bg={getStatusColor(candidate.status_level)} />
                     <Text fontSize="xs" color="gray.600">{getStatusLabel(candidate.status_level)}</Text>
                   </Flex>
+                  {candidate.status_comment && (
+                    <Text fontSize="xs" color="gray.500" mt="xs" lineClamp={1}>「{candidate.status_comment}」</Text>
+                  )}
                 </Box>
-                <Button size="sm" colorScheme="blue" w="full" mt="auto" onClick={() => handleInvite(candidate.user_id)}>
-                  誘う
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  w="full"
+                  mt="auto"
+                  disabled={!!candidate.match_id}
+                  onClick={() => handleInvite(candidate.friend_id)}
+                >
+                  {candidate.match_id ? '誘い済み' : '誘う'}
                 </Button>
               </Box>
             ))}
