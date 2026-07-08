@@ -6,6 +6,7 @@
  * リクエストボディ (JSON):
  * {
  *   "username": "campus_taro",
+ *   "email":    "taro@stu.musashino-u.ac.jp",  // @stu.musashino-u.ac.jp 必須
  *   "password": "securepassword",
  *   "campus":   "有明キャンパス", // 省略可
  *   "faculty":  "経営学部3年",     // 省略可
@@ -13,7 +14,7 @@
  * }
  *
  * レスポンス (JSON):
- * 成功: { "success": true, "user": { "id": 1, "username": "campus_taro", "campus": "...", "faculty": "...", "circle": "..." } }
+ * 成功: { "success": true, "user": { "id": 1, "username": "campus_taro", "email": "...", "campus": "...", "faculty": "...", "circle": "..." } }
  * 失敗: { "success": false, "message": "エラーメッセージ" }
  */
 
@@ -31,27 +32,44 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $body = json_decode(file_get_contents('php://input'), true);
 
 $username = trim($body['username'] ?? '');
+$email    = trim($body['email'] ?? '');
 $password = $body['password'] ?? '';
 $campus   = trim($body['campus'] ?? '有明キャンパス');
 $faculty  = trim($body['faculty'] ?? '');
 $circle   = trim($body['circle'] ?? '');
 
-// バリデーション
-if (empty($username) || empty($password)) {
+// バリデーション: 必須項目
+if (empty($username) || empty($password) || empty($email)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'ユーザー名とパスワードは必須です。']);
+    echo json_encode(['success' => false, 'message' => 'ユーザー名・メールアドレス・パスワードは必須です。']);
     exit;
 }
 
+// バリデーション: ユーザー名の長さ
 if (strlen($username) < 3 || strlen($username) > 50) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'ユーザー名は3〜50文字で入力してください。']);
     exit;
 }
 
+// バリデーション: パスワードの長さ
 if (strlen($password) < 6) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'パスワードは6文字以上で入力してください。']);
+    exit;
+}
+
+// バリデーション: 大学メールアドレスのみ許可
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => '有効なメールアドレスを入力してください。']);
+    exit;
+}
+
+$allowed_domain = '@stu.musashino-u.ac.jp';
+if (!str_ends_with(strtolower($email), $allowed_domain)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => '武蔵野大学の学生メール（@stu.musashino-u.ac.jp）のみ登録できます。']);
     exit;
 }
 
@@ -66,16 +84,26 @@ if ($stmt->fetch()) {
     exit;
 }
 
+// メールアドレスの重複チェック
+$stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email');
+$stmt->execute([':email' => strtolower($email)]);
+if ($stmt->fetch()) {
+    http_response_code(409);
+    echo json_encode(['success' => false, 'message' => 'このメールアドレスはすでに使用されています。']);
+    exit;
+}
+
 // パスワードをハッシュ化して保存
 $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
 $stmt = $pdo->prepare(
-    'INSERT INTO users (username, password_hash, campus, faculty, circle) 
-     VALUES (:username, :password_hash, :campus, :faculty, :circle) 
+    'INSERT INTO users (username, email, password_hash, campus, faculty, circle) 
+     VALUES (:username, :email, :password_hash, :campus, :faculty, :circle) 
      RETURNING id'
 );
 $stmt->execute([
     ':username'      => $username,
+    ':email'         => strtolower($email),
     ':password_hash' => $password_hash,
     ':campus'        => $campus,
     ':faculty'       => $faculty,
@@ -90,6 +118,7 @@ echo json_encode([
     'user'    => [
         'id'       => (int)$new_user['id'],
         'username' => $username,
+        'email'    => strtolower($email),
         'campus'   => $campus,
         'faculty'  => $faculty,
         'circle'   => $circle,
