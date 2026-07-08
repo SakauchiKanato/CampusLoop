@@ -58,7 +58,7 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
         setError(res.message || '登録に失敗しました。');
       }
     } catch (err) {
-      setError('サーバーとの通信に失敗しました。');
+      setError(err instanceof Error ? err.message : 'サーバーとの通信に失敗しました。');
     } finally {
       setIsLoading(false);
     }

@@ -24,28 +24,44 @@ export const API_ENDPOINTS = {
 // ============================
 // 共通フェッチヘルパー
 // ============================
+
+// バックエンドに接続できない（サーバー未起動など）ときのエラーメッセージ
+const CONNECTION_ERROR_MESSAGE = isProd
+  ? 'サーバーに接続できません。時間をおいて再度お試しください。'
+  : 'バックエンドに接続できません。PHPサーバーが起動しているか確認してください（LOCAL_DEV.md 参照。例: mirai-pj ディレクトリで php -S localhost:8080）。';
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch {
+    // ネットワークエラー（接続拒否・オフラインなど）
+    throw new Error(CONNECTION_ERROR_MESSAGE);
+  }
+  try {
+    const data: T = await res.json();
+    return data;
+  } catch {
+    throw new Error('サーバーから不正な応答が返されました。');
+  }
+}
+
 export async function apiPost<T>(url: string, body: object): Promise<T> {
-  const res = await fetch(url, {
+  return request<T>(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data: T = await res.json();
-  return data;
 }
 
 export async function apiGet<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  const data: T = await res.json();
-  return data;
+  return request<T>(url);
 }
 
 export async function apiPut<T>(url: string, body: object): Promise<T> {
-  const res = await fetch(url, {
+  return request<T>(url, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data: T = await res.json();
-  return data;
 }
