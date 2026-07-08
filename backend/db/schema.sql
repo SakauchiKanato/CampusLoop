@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS users       CASCADE;
 CREATE TABLE users (
     id            SERIAL PRIMARY KEY,
     username      VARCHAR(50)  NOT NULL UNIQUE,
+    email         VARCHAR(200) NOT NULL UNIQUE,              -- 大学メールアドレス (@stu.musashino-u.ac.jp)
     password_hash TEXT         NOT NULL,
     campus        VARCHAR(100) DEFAULT '有明キャンパス',
     faculty       VARCHAR(100) DEFAULT NULL, -- 学部名

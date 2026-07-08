@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   matches:   `${API_BASE}/matches.php`,
   chat:      `${API_BASE}/chat.php`,
   friends:   `${API_BASE}/friends.php`,
+  profile:   `${API_BASE}/profile.php`,
 } as const;
 
 // ============================

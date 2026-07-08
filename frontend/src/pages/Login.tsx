@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Box, Flex, VStack, Heading, Input, Button, Text } from '@yamada-ui/react';
 import { API_ENDPOINTS, apiPost } from '../lib/api';
 
-export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
+export default function Login({ onLogin, onGoRegister }: { onLogin: (user: any) => void; onGoRegister?: () => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +60,27 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
             ログイン
           </Button>
 
-          <Text fontSize="xs" color="gray.400" textAlign="center" mt="md">
+          {onGoRegister && (
+            <Flex align="center" justify="center" gap="xs" mt="sm">
+              <Text fontSize="sm" color="gray.500">アカウントをお持ちでない方は</Text>
+              <Text
+                as="button"
+                type="button"
+                fontSize="sm"
+                color="blue.500"
+                fontWeight="bold"
+                onClick={onGoRegister}
+                cursor="pointer"
+                bg="none"
+                border="none"
+                p="0"
+              >
+                新規登録
+              </Text>
+            </Flex>
+          )}
+
+          <Text fontSize="xs" color="gray.400" textAlign="center" mt="sm">
             同じ大学のキャンパスに通う学生のためのアプリです
           </Text>
         </VStack>
@@ -68,3 +88,4 @@ export default function Login({ onLogin }: { onLogin: (user: any) => void }) {
     </Flex>
   );
 }
+

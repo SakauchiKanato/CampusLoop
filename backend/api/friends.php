@@ -1,48 +1,176 @@
 <?php
 /**
- * フレンド一覧 API
- * GET /api/friends.php?user_id=1
+ * フレンド API
+ * GET  /api/friends.php?user_id=1           → フレンド一覧
+ * POST /api/friends.php                     → フレンド追加
+ * GET  /api/friends.php?search=1&q=keyword  → ユーザー検索
+ *
+ * POST リクエストボディ (JSON):
+ * { "user_id": 1, "friend_id": 2 }
+ * または
+ * { "user_id": 1, "friend_username": "campus_taro" }
  */
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'GETメソッドのみ使用できます。']);
+$method = $_SERVER['REQUEST_METHOD'];
+
+// ─────────────── GET: フレンド一覧 or ユーザー検索 ───────────────
+if ($method === 'GET') {
+
+    // ユーザー検索モード
+    if (isset($_GET['search']) && isset($_GET['q'])) {
+        $q = trim($_GET['q']);
+        $exclude_id = isset($_GET['exclude_id']) ? (int)$_GET['exclude_id'] : 0;
+
+        if (strlen($q) < 1) {
+            echo json_encode(['success' => true, 'users' => []]);
+            exit;
+        }
+
+        $pdo = get_db();
+        $stmt = $pdo->prepare(
+            'SELECT id, username, faculty, circle, campus
+             FROM users
+             WHERE (username ILIKE :q OR CAST(id AS TEXT) = :exact_id)
+               AND id != :exclude_id
+             LIMIT 10'
+        );
+        $stmt->execute([
+            ':q'          => '%' . $q . '%',
+            ':exact_id'   => $q,
+            ':exclude_id' => $exclude_id,
+        ]);
+        $users = $stmt->fetchAll();
+
+        foreach ($users as &$u) {
+            $u['id'] = (int)$u['id'];
+        }
+
+        echo json_encode(['success' => true, 'users' => $users]);
+        exit;
+    }
+
+    // フレンド一覧モード
+    $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+
+    if (!$user_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
+        exit;
+    }
+
+    $pdo = get_db();
+
+    $stmt = $pdo->prepare(
+        'SELECT 
+            u.id as friend_id,
+            u.username,
+            u.avatar_url,
+            u.faculty,
+            u.circle
+         FROM friendships f
+         JOIN users u ON f.friend_id = u.id
+         WHERE f.user_id = :user_id
+         ORDER BY u.username ASC'
+    );
+    $stmt->execute([':user_id' => $user_id]);
+    $friends = $stmt->fetchAll();
+
+    foreach ($friends as &$f) {
+        $f['friend_id'] = (int)$f['friend_id'];
+    }
+
+    echo json_encode([
+        'success' => true,
+        'friends' => $friends
+    ]);
     exit;
 }
 
-$user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+// ─────────────── POST: フレンド追加 ───────────────
+if ($method === 'POST') {
+    $body = json_decode(file_get_contents('php://input'), true);
 
-if (!$user_id) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
+    $user_id         = isset($body['user_id']) ? (int)$body['user_id'] : null;
+    $friend_id       = isset($body['friend_id']) ? (int)$body['friend_id'] : null;
+    $friend_username = trim($body['friend_username'] ?? '');
+
+    if (!$user_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
+        exit;
+    }
+
+    $pdo = get_db();
+
+    // ユーザー名からIDを解決
+    if (!$friend_id && $friend_username !== '') {
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE username = :username');
+        $stmt->execute([':username' => $friend_username]);
+        $found = $stmt->fetch();
+        if (!$found) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => '指定されたユーザーが見つかりません。']);
+            exit;
+        }
+        $friend_id = (int)$found['id'];
+    }
+
+    if (!$friend_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'friend_id または friend_username は必須です。']);
+        exit;
+    }
+
+    if ($user_id === $friend_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => '自分自身を友達追加することはできません。']);
+        exit;
+    }
+
+    // 相手ユーザー存在確認
+    $stmt = $pdo->prepare('SELECT id, username FROM users WHERE id = :id');
+    $stmt->execute([':id' => $friend_id]);
+    $friend_user = $stmt->fetch();
+    if (!$friend_user) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => '指定されたユーザーが見つかりません。']);
+        exit;
+    }
+
+    // 既に友達か確認
+    $stmt = $pdo->prepare('SELECT 1 FROM friendships WHERE user_id = :uid AND friend_id = :fid');
+    $stmt->execute([':uid' => $user_id, ':fid' => $friend_id]);
+    if ($stmt->fetch()) {
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => 'すでに友達登録されています。']);
+        exit;
+    }
+
+    // 双方向で friendships に追加
+    $stmt = $pdo->prepare(
+        'INSERT INTO friendships (user_id, friend_id) VALUES (:uid, :fid), (:fid2, :uid2)
+         ON CONFLICT DO NOTHING'
+    );
+    $stmt->execute([
+        ':uid'  => $user_id,
+        ':fid'  => $friend_id,
+        ':fid2' => $friend_id,
+        ':uid2' => $user_id,
+    ]);
+
+    echo json_encode([
+        'success' => true,
+        'message' => $friend_user['username'] . 'さんを友達に追加しました。',
+        'friend'  => [
+            'friend_id' => $friend_id,
+            'username'  => $friend_user['username'],
+        ]
+    ]);
     exit;
 }
 
-$pdo = get_db();
-
-$stmt = $pdo->prepare(
-    'SELECT 
-        u.id as friend_id,
-        u.username,
-        u.avatar_url,
-        u.faculty,
-        u.circle
-     FROM friendships f
-     JOIN users u ON f.friend_id = u.id
-     WHERE f.user_id = :user_id
-     ORDER BY u.username ASC'
-);
-$stmt->execute([':user_id' => $user_id]);
-$friends = $stmt->fetchAll();
-
-foreach ($friends as &$f) {
-    $f['friend_id'] = (int)$f['friend_id'];
-}
-
-echo json_encode([
-    'success' => true,
-    'friends' => $friends
-]);
+http_response_code(405);
+echo json_encode(['success' => false, 'message' => 'GET または POST メソッドのみ使用できます。']);

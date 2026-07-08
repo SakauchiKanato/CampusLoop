@@ -21,12 +21,14 @@ export interface UserStatus {
 }
 
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Home from './pages/Home';
 import MatchList from './pages/MatchList';
 import TimetableEdit from './pages/TimetableEdit';
 import StatusSetting from './pages/StatusSetting';
 import Chat from './pages/Chat';
 import MyPage from './pages/MyPage';
+import ProfileEdit from './pages/ProfileEdit';
 
 function Layout({ user, userStatus, onLogout }: { user: LoggedInUser, userStatus: UserStatus, onLogout: () => void }) {
   const navigate = useNavigate();
@@ -112,6 +114,7 @@ function Layout({ user, userStatus, onLogout }: { user: LoggedInUser, userStatus
           <Route path="/status/edit" element={<StatusSetting user={user} />} />
           <Route path="/chat/:matchId" element={<Chat user={user} />} />
           <Route path="/mypage" element={<MyPage user={user} onLogout={onLogout} />} />
+          <Route path="/profile/edit" element={<ProfileEdit user={user!} onProfileUpdate={handleProfileUpdate} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Box>
@@ -182,6 +185,10 @@ function App() {
     setUser(loggedInUser);
   };
 
+  const handleProfileUpdate = (updatedUser: LoggedInUser) => {
+    setUser(updatedUser);
+  };
+
   const handleLogout = () => {
     if (window.confirm('ログアウトしますか？')) {
       setUser(null);
@@ -194,11 +201,20 @@ function App() {
     }
   };
 
+  const [showRegister, setShowRegister] = useState(false);
+
   return (
     <BrowserRouter>
       {!user ? (
         <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route
+            path="/login"
+            element={
+              showRegister
+                ? <Register onRegister={handleLogin} onGoLogin={() => setShowRegister(false)} />
+                : <Login onLogin={handleLogin} onGoRegister={() => setShowRegister(true)} />
+            }
+          />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       ) : (
