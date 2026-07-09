@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 const WEEKDAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
@@ -47,6 +47,33 @@ interface MatchCandidate {
   match_status: string | null;
 }
 
+interface CampusEvent {
+  id: number;
+  title: string;
+  description: string | null;
+  event_date: string; // YYYY-MM-DD
+  period: number;
+  location: string | null;
+  campus: string;
+  creator_id: number;
+  creator_name: string;
+  participant_count: number;
+  is_joined: boolean;
+}
+
+// YYYY-MM-DD → 「今日」「明日」「M月D日」
+const formatEventDate = (dateStr: string) => {
+  const toKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  if (dateStr === toKey(today)) return '今日';
+  if (dateStr === toKey(tomorrow)) return '明日';
+  const m = dateStr.match(/^\d{4}-(\d{2})-(\d{2})/);
+  return m ? `${Number(m[1])}月${Number(m[2])}日` : dateStr;
+};
+
 export default function Home({ user }: { user: LoggedInUser | null }) {
   const navigate = useNavigate();
 
@@ -64,6 +91,8 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   const [matchPeriod, setMatchPeriod] = useState<number | null>(null);
   const [loadingTimetable, setLoadingTimetable] = useState(true);
   const [loadingMatches, setLoadingMatches] = useState(true);
+  const [events, setEvents] = useState<CampusEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -86,7 +115,70 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   useEffect(() => {
     if (!user) return;
     fetchTimetable();
+    fetchEvents();
   }, [user]);
+
+  const fetchEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const res = await apiGet<{ success: boolean; events?: CampusEvent[] }>(
+        `${API_ENDPOINTS.events}?user_id=${user!.id}`
+      );
+      setEvents(res.success && res.events ? res.events : []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  // イベント参加/取り消しトグル
+  const handleToggleJoin = async (eventId: number) => {
+    try {
+      const res = await apiPut<{ success: boolean; joined?: boolean; participant_count?: number }>(
+        API_ENDPOINTS.events,
+        { event_id: eventId, user_id: user!.id }
+      );
+      if (res.success) {
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === eventId
+              ? { ...ev, is_joined: !!res.joined, participant_count: res.participant_count ?? ev.participant_count }
+              : ev
+          )
+        );
+      }
+    } catch {
+      alert('参加登録に失敗しました。');
+    }
+  };
+
+  // 自分が作ったイベントの削除
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!window.confirm('このイベントを削除しますか？')) return;
+    try {
+      const res = await apiDelete<{ success: boolean; message?: string }>(API_ENDPOINTS.events, {
+        event_id: eventId,
+        user_id: user!.id,
+      });
+      if (res.success) {
+        setEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+      } else {
+        alert(res.message || '削除に失敗しました。');
+      }
+    } catch {
+      alert('削除に失敗しました。');
+    }
+  };
+
+  // そのイベントが「自分の空きコマ」と一致するか（今日開催×該当時限が空き）
+  const isMyFreeSlot = (ev: CampusEvent) => {
+    const today = new Date();
+    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    if (ev.event_date !== key) return false;
+    const slot = timetable.find((t) => t.period === ev.period);
+    return !!slot?.is_free;
+  };
 
   const fetchTimetable = async () => {
     setLoadingTimetable(true);
@@ -332,6 +424,86 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
               </Box>
             ))}
           </Grid>
+        )}
+      </Box>
+
+      {/* 学内イベントセクション（全ユーザーに公開） */}
+      <Box>
+        <Flex justify="space-between" align="center" mb="md">
+          <Heading as="h2" size="md" display="flex" alignItems="center" gap="xs">
+            🎪 学内イベント
+          </Heading>
+          <Button size="sm" colorScheme="violet" borderRadius="full" onClick={() => navigate('/events/new')}>
+            ＋ イベントを作る
+          </Button>
+        </Flex>
+
+        {loadingEvents ? (
+          <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+        ) : events.length === 0 ? (
+          <Box
+            bg="white"
+            p="lg"
+            borderRadius="2xl"
+            boxShadow="0 4px 20px rgba(99,102,241,0.08)"
+            textAlign="center"
+            color="gray.400"
+          >
+            <Text fontSize="sm">まだイベントがありません</Text>
+            <Text fontSize="xs" mt="xs">「＋ イベントを作る」から最初のイベントを立ててみよう！</Text>
+          </Box>
+        ) : (
+          <VStack gap="md" align="stretch">
+            {events.map((ev) => (
+              <Box
+                key={ev.id}
+                bg="white"
+                borderRadius="2xl"
+                boxShadow="0 4px 16px rgba(99,102,241,0.10)"
+                p="md"
+                borderLeft={isMyFreeSlot(ev) ? '4px solid' : 'none'}
+                borderLeftColor="violet.400"
+              >
+                <Flex justify="space-between" align="flex-start" gap="sm">
+                  <Box flex="1">
+                    <Flex align="center" gap="xs" wrap="wrap" mb="xs">
+                      <Text fontWeight="bold" fontSize="md">{ev.title}</Text>
+                      {isMyFreeSlot(ev) && (
+                        <Box bg="violet.100" color="violet.700" fontSize="2xs" fontWeight="bold" px="sm" py="0.5" borderRadius="full">
+                          あなたの空きコマ！
+                        </Box>
+                      )}
+                    </Flex>
+                    <Text fontSize="xs" color="gray.500">
+                      🗓 {formatEventDate(ev.event_date)}・{ev.period}限
+                      {ev.location ? `　📍 ${ev.location}` : ''}　🏫 {ev.campus}
+                    </Text>
+                    {ev.description && (
+                      <Text fontSize="sm" color="gray.700" mt="xs">「{ev.description}」</Text>
+                    )}
+                    <Text fontSize="2xs" color="gray.400" mt="xs">主催: {ev.creator_name}</Text>
+                  </Box>
+                  <Flex direction="column" align="flex-end" gap="xs" flexShrink={0}>
+                    <Button
+                      size="sm"
+                      borderRadius="full"
+                      colorScheme={ev.is_joined ? 'green' : 'violet'}
+                      variant={ev.is_joined ? 'solid' : 'outline'}
+                      onClick={() => handleToggleJoin(ev.id)}
+                    >
+                      {ev.is_joined ? '✅ 参加中' : '👍 参加する'}
+                    </Button>
+                    <Text fontSize="xs" color="gray.500">{ev.participant_count}人が参加</Text>
+                    {ev.creator_id === user?.id && (
+                      <Button size="xs" variant="ghost" colorScheme="red" onClick={() => handleDeleteEvent(ev.id)}>
+                        削除
+                      </Button>
+                    )}
+                  </Flex>
+                </Flex>
+              </Box>
+            ))}
+          </VStack>
         )}
       </Box>
     </VStack>

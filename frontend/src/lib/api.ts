@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   chat:      `${API_BASE}/chat.php`,
   friends:   `${API_BASE}/friends.php`,
   profile:   `${API_BASE}/profile.php`,
+  events:    `${API_BASE}/events.php`,
 } as const;
 
 // ============================
@@ -61,6 +62,14 @@ export async function apiGet<T>(url: string): Promise<T> {
 export async function apiPut<T>(url: string, body: object): Promise<T> {
   return request<T>(url, {
     method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function apiDelete<T>(url: string, body: object): Promise<T> {
+  return request<T>(url, {
+    method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
