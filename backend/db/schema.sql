@@ -1,6 +1,8 @@
 -- スキマッチ (SukimaMatch) データベース定義 (PostgreSQL)
 --
 
+DROP TABLE IF EXISTS event_participants CASCADE;
+DROP TABLE IF EXISTS events      CASCADE;
 DROP TABLE IF EXISTS messages    CASCADE;
 DROP TABLE IF EXISTS matches     CASCADE;
 DROP TABLE IF EXISTS friendships  CASCADE;
@@ -68,4 +70,25 @@ CREATE TABLE messages (
     sender_id   INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content     TEXT         NOT NULL,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. events テーブル（学生発信の学内イベント。全ユーザーに公開）
+CREATE TABLE events (
+    id          SERIAL PRIMARY KEY,
+    creator_id  INTEGER      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title       VARCHAR(100) NOT NULL,
+    description TEXT         DEFAULT NULL,
+    event_date  DATE         NOT NULL,                                      -- 開催日
+    period      SMALLINT     NOT NULL CHECK (period BETWEEN 1 AND 5),       -- 開催時限
+    location    VARCHAR(100) DEFAULT NULL,                                  -- 場所（芝生広場など）
+    campus      VARCHAR(100) DEFAULT '有明キャンパス',
+    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. event_participants テーブル（イベント参加者）
+CREATE TABLE event_participants (
+    event_id  INTEGER   NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id   INTEGER   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (event_id, user_id)
 );

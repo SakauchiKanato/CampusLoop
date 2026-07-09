@@ -26,6 +26,13 @@ interface MatchCandidate {
   match_status: string | null;
 }
 
+interface PendingInvite {
+  match_id: number;
+  period: number;
+  from_user: number;
+  from_username: string;
+}
+
 const GROUP_DEFS = [
   { level: 'free', title: '誰でもおいで！（暇）', color: 'green.500', showInvite: true },
   { level: 'chat', title: '作業中だけど喋れる（ゆる募）', color: 'orange.500', showInvite: true },
@@ -43,6 +50,7 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
   const currentPeriod = getCurrentPeriod();
   const [period, setPeriod] = useState(currentPeriod ?? 5);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
+  const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [invitingId, setInvitingId] = useState<number | null>(null);
 
@@ -53,6 +61,23 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
     }
     fetchCandidates(period);
   }, [user, period]);
+
+  useEffect(() => {
+    if (!user || isWeekend) return;
+    fetchInvites();
+  }, [user]);
+
+  // 自分宛の未応答の誘いを取得
+  const fetchInvites = async () => {
+    try {
+      const res = await apiGet<{ success: boolean; invites?: PendingInvite[] }>(
+        `${API_ENDPOINTS.matches}?pending=1&user_id=${user!.id}`
+      );
+      setInvites(res.success && res.invites ? res.invites : []);
+    } catch {
+      setInvites([]);
+    }
+  };
 
   const fetchCandidates = async (p: number) => {
     setLoading(true);
@@ -96,6 +121,7 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
         navigate(`/chat/${matchId}`);
       } else {
         fetchCandidates(period);
+        fetchInvites();
       }
     } catch {
       alert('返答の送信に失敗しました。');
@@ -122,6 +148,34 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
         <IconButton icon={<ChevronLeft />} variant="ghost" onClick={() => navigate(-1)} aria-label="戻る" />
         <Heading as="h2" size="md">{period}限のマッチ候補 ({PERIOD_TIMES[period]})</Heading>
       </Flex>
+
+      {/* 届いている誘い */}
+      {invites.length > 0 && (
+        <Box bg="white" p="md" borderRadius="2xl" boxShadow="0 4px 16px rgba(239,68,68,0.12)" border="1px solid" borderColor="red.100">
+          <Text fontWeight="bold" mb="sm">📥 届いている誘い（{invites.length}件）</Text>
+          <VStack gap="sm" align="stretch">
+            {invites.map((inv) => (
+              <Flex key={inv.match_id} align="center" justify="space-between" gap="sm">
+                <Flex align="center" gap="sm" flex="1">
+                  <Avatar name={inv.from_username} size="sm" />
+                  <Text fontSize="sm">
+                    <Text as="span" fontWeight="bold">{inv.from_username}</Text>
+                    さんから <Text as="span" fontWeight="bold" color="violet.600">{inv.period}限</Text> に誘われています
+                  </Text>
+                </Flex>
+                <Flex gap="xs" flexShrink={0}>
+                  <Button size="sm" colorScheme="green" borderRadius="full" onClick={() => handleRespond(inv.match_id, 'accepted')}>
+                    承諾
+                  </Button>
+                  <Button size="sm" colorScheme="red" variant="outline" borderRadius="full" onClick={() => handleRespond(inv.match_id, 'rejected')}>
+                    断る
+                  </Button>
+                </Flex>
+              </Flex>
+            ))}
+          </VStack>
+        </Box>
+      )}
 
       {/* 時限セレクタ（終了済みの時限は選択不可） */}
       <Flex gap="sm">
