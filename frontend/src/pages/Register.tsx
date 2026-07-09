@@ -22,12 +22,15 @@ const FACULTY_OPTIONS = [
 
 const YEAR_OPTIONS = ['1年', '2年', '3年', '4年'];
 
+const CAMPUS_OPTIONS = ['有明キャンパス', '武蔵野キャンパス'];
+
 export default function Register({ onRegister, onGoLogin }: { onRegister: (user: any) => void; onGoLogin: () => void }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [faculty, setFaculty] = useState('');
   const [year, setYear] = useState('');
+  const [campus, setCampus] = useState('有明キャンパス');
   const [circle, setCircle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +52,7 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
         email,
         password,
         faculty: faculty + (year ? year : ''),
+        campus,
         circle,
       });
 
@@ -158,6 +162,26 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
               </Box>
             </Box>
           </Flex>
+
+          <Box w="full">
+            <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">キャンパス</Text>
+            <Box
+              as="select"
+              value={campus}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCampus(e.target.value)}
+              w="full"
+              p="sm"
+              border="1px solid"
+              borderColor="gray.200"
+              borderRadius="md"
+              bg="white"
+              fontSize="sm"
+            >
+              {CAMPUS_OPTIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </Box>
+          </Box>
 
           <Box w="full">
             <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">サークル（任意）</Text>
