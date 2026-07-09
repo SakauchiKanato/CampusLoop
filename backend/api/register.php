@@ -67,7 +67,9 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $allowed_domain = '@stu.musashino-u.ac.jp';
-if (!str_ends_with(strtolower($email), $allowed_domain)) {
+// str_ends_with() は PHP 8.0+ のため、PHP 7 でも動く substr 比較を使う
+$email_lower = strtolower($email);
+if (substr($email_lower, -strlen($allowed_domain)) !== $allowed_domain) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => '武蔵野大学の学生メール（@stu.musashino-u.ac.jp）のみ登録できます。']);
     exit;
