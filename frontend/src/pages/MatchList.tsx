@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
+import { getCurrentPeriod } from './Home';
 
 const PERIOD_TIMES: Record<number, string> = {
   1: '09:00〜10:30',
@@ -38,7 +39,9 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
   const todayDb = new Date().getDay();
   const isWeekend = todayDb === 0 || todayDb === 6;
 
-  const [period, setPeriod] = useState(3);
+  // 現在時刻に合わせた時限を初期表示（例: 15時なら4限）。授業終了後は5限を表示
+  const currentPeriod = getCurrentPeriod();
+  const [period, setPeriod] = useState(currentPeriod ?? 5);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [invitingId, setInvitingId] = useState<number | null>(null);
@@ -120,21 +123,32 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
         <Heading as="h2" size="md">{period}限のマッチ候補 ({PERIOD_TIMES[period]})</Heading>
       </Flex>
 
-      {/* 時限セレクタ */}
+      {/* 時限セレクタ（終了済みの時限は選択不可） */}
       <Flex gap="sm">
-        {[1, 2, 3, 4, 5].map((p) => (
-          <Button
-            key={p}
-            size="sm"
-            flex="1"
-            variant={period === p ? 'solid' : 'outline'}
-            colorScheme={period === p ? 'blue' : 'gray'}
-            onClick={() => setPeriod(p)}
-          >
-            {p}限
-          </Button>
-        ))}
+        {[1, 2, 3, 4, 5].map((p) => {
+          const isPast = currentPeriod !== null && p < currentPeriod;
+          return (
+            <Button
+              key={p}
+              size="sm"
+              flex="1"
+              borderRadius="full"
+              variant={period === p ? 'solid' : 'outline'}
+              colorScheme={period === p ? 'blue' : 'gray'}
+              disabled={isPast}
+              opacity={isPast ? 0.4 : 1}
+              onClick={() => setPeriod(p)}
+            >
+              {p}限{p === currentPeriod ? ' 🔥' : ''}
+            </Button>
+          );
+        })}
       </Flex>
+      {currentPeriod !== null && (
+        <Text fontSize="xs" color="gray.500" textAlign="center">
+          🕐 いまは{currentPeriod}限の時間帯です（終了した時限は選べません）
+        </Text>
+      )}
 
       {loading ? (
         <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
@@ -156,7 +170,7 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
           {GROUP_DEFS.map((group) => {
             const members = candidates.filter((c) => c.status_level === group.level);
             return (
-              <Box key={group.level}>
+              <Box key={group.level} bg="white" p="md" borderRadius="2xl" boxShadow="0 4px 16px rgba(99,102,241,0.08)">
                 <Flex align="center" justify="space-between" mb="sm">
                   <Flex align="center" gap="xs">
                     <Box w="12px" h="12px" borderRadius="full" bg={group.color} />
