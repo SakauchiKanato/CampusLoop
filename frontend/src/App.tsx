@@ -31,10 +31,30 @@ import StatusSetting from './pages/StatusSetting';
 import Chat from './pages/Chat';
 import MyPage from './pages/MyPage';
 import ProfileEdit from './pages/ProfileEdit';
+import EventCreate from './pages/EventCreate';
 
 function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }: { user: LoggedInUser, userStatus: UserStatus, onLogout: () => void, onProfileUpdate: (updatedUser: LoggedInUser) => void, onStatusUpdated: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 未応答の誘い数（通知バッジ用）。30秒ごと＋画面遷移時に更新
+  const [pendingCount, setPendingCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await apiGet<{ success: boolean; count?: number }>(
+          `${API_ENDPOINTS.matches}?pending=1&user_id=${user.id}`
+        );
+        if (!cancelled && res.success) setPendingCount(res.count ?? 0);
+      } catch {
+        // 通信エラー時はバッジを更新しない
+      }
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [user.id, location.pathname]);
 
   const getStatusColor = (level: UserStatus['level']) => {
     switch (level) {
@@ -117,6 +137,7 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
           <Route path="/timetable/edit" element={<TimetableEdit user={user} />} />
           <Route path="/status/edit" element={<StatusSetting user={user} onStatusUpdated={onStatusUpdated} />} />
           <Route path="/chat/:matchId" element={<Chat user={user} />} />
+          <Route path="/events/new" element={<EventCreate user={user} />} />
           <Route path="/mypage" element={<MyPage user={user} onLogout={onLogout} />} />
           <Route path="/profile/edit" element={<ProfileEdit user={user} onProfileUpdate={onProfileUpdate} />} />
           <Route path="*" element={<Navigate to="/" />} />
@@ -158,7 +179,29 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
               borderRadius="xl"
               transition="all 0.2s"
             >
-              {item.icon}
+              <Box position="relative">
+                {item.icon}
+                {item.path === '/matches' && pendingCount > 0 && (
+                  <Flex
+                    position="absolute"
+                    top="-6px"
+                    right="-10px"
+                    bg="red.500"
+                    color="white"
+                    borderRadius="full"
+                    minW="17px"
+                    h="17px"
+                    fontSize="2xs"
+                    fontWeight="bold"
+                    align="center"
+                    justify="center"
+                    px="1"
+                    boxShadow="0 1px 4px rgba(239,68,68,0.5)"
+                  >
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </Flex>
+                )}
+              </Box>
               <Text fontSize="2xs" mt="1" fontWeight={active ? 'bold' : 'normal'}>{item.label}</Text>
             </Flex>
           );

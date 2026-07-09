@@ -24,6 +24,38 @@ $pdo = get_db();
 $pdo->exec('DELETE FROM matches WHERE created_at < CURRENT_DATE');
 
 // ==============================
+// GET (pending=1): 自分宛の未応答の誘い一覧（通知バッジ用）
+// ==============================
+if ($method === 'GET' && isset($_GET['pending'])) {
+    $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
+
+    if (!$user_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT m.id AS match_id, m.period, m.from_user, u.username AS from_username
+         FROM matches m
+         JOIN users u ON m.from_user = u.id
+         WHERE m.to_user = :uid AND m.status = \'pending\' AND m.created_at >= CURRENT_DATE
+         ORDER BY m.period ASC'
+    );
+    $stmt->execute([':uid' => $user_id]);
+    $invites = $stmt->fetchAll();
+
+    foreach ($invites as &$inv) {
+        $inv['match_id']  = (int)$inv['match_id'];
+        $inv['period']    = (int)$inv['period'];
+        $inv['from_user'] = (int)$inv['from_user'];
+    }
+
+    echo json_encode(['success' => true, 'invites' => $invites, 'count' => count($invites)]);
+    exit;
+}
+
+// ==============================
 // GET: 特定時限の空きコママッチ候補一覧
 // ==============================
 if ($method === 'GET') {
