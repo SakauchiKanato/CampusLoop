@@ -55,24 +55,26 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
   };
 
   return (
-    <Box bg="gray.50" minH="100vh" pb="90px">
-      {/* Header */}
+    <Box minH="100vh" pb="90px">
+      {/* Header（学生向けのグラデーションヘッダー） */}
       <Flex
         as="header"
         justify="space-between"
         align="center"
-        p="md"
-        bg="white"
-        borderBottom="1px solid"
-        borderColor="gray.200"
+        py="sm"
+        px="md"
         position="sticky"
         top={0}
         zIndex={100}
-        boxShadow="sm"
+        boxShadow="0 2px 14px rgba(99,102,241,0.30)"
+        style={{ background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 55%, #a855f7 100%)' }}
       >
         <Flex align="center" gap="sm">
           <Text fontSize="2xl">⚡</Text>
-          <Text fontSize="xl" fontWeight="bold" color="blue.800" letterSpacing="-0.5px">スキマッチ</Text>
+          <Box>
+            <Text fontSize="xl" fontWeight="bold" color="white" letterSpacing="-0.5px" lineHeight="1.2">スキマッチ</Text>
+            <Text fontSize="2xs" color="whiteAlpha.800">空きコマを、いちばん楽しい時間に。</Text>
+          </Box>
         </Flex>
 
         <Flex align="center" gap="sm">
@@ -121,7 +123,7 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
         </Routes>
       </Box>
 
-      {/* Footer Navigation */}
+      {/* Footer Navigation（角丸フローティング風ナビ） */}
       <Flex
         as="nav"
         position="fixed"
@@ -129,26 +131,38 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
         left={0}
         right={0}
         bg="white"
-        borderTop="1px solid"
-        borderColor="gray.200"
         justify="space-around"
         align="center"
-        py="sm"
+        py="xs"
         zIndex={100}
-        boxShadow="0 -2px 10px rgba(0,0,0,0.05)"
+        borderTopRadius="2xl"
+        boxShadow="0 -4px 20px rgba(99,102,241,0.15)"
       >
-        <Flex direction="column" align="center" cursor="pointer" onClick={() => navigate('/')} color={location.pathname === '/' ? 'blue.500' : 'gray.400'}>
-          <HomeIcon size={24} />
-          <Text fontSize="xs" mt="1">ホーム</Text>
-        </Flex>
-        <Flex direction="column" align="center" cursor="pointer" onClick={() => navigate('/matches')} color={location.pathname === '/matches' ? 'blue.500' : 'gray.400'}>
-          <Users size={24} />
-          <Text fontSize="xs" mt="1">マッチ一覧</Text>
-        </Flex>
-        <Flex direction="column" align="center" cursor="pointer" onClick={() => navigate('/mypage')} color={location.pathname === '/mypage' ? 'blue.500' : 'gray.400'}>
-          <User size={24} />
-          <Text fontSize="xs" mt="1">マイページ</Text>
-        </Flex>
+        {[
+          { path: '/', icon: <HomeIcon size={22} />, label: 'ホーム' },
+          { path: '/matches', icon: <Users size={22} />, label: 'マッチ一覧' },
+          { path: '/mypage', icon: <User size={22} />, label: 'マイページ' },
+        ].map((item) => {
+          const active = location.pathname === item.path;
+          return (
+            <Flex
+              key={item.path}
+              direction="column"
+              align="center"
+              cursor="pointer"
+              onClick={() => navigate(item.path)}
+              color={active ? 'violet.600' : 'gray.400'}
+              bg={active ? 'violet.50' : 'transparent'}
+              px="lg"
+              py="xs"
+              borderRadius="xl"
+              transition="all 0.2s"
+            >
+              {item.icon}
+              <Text fontSize="2xs" mt="1" fontWeight={active ? 'bold' : 'normal'}>{item.label}</Text>
+            </Flex>
+          );
+        })}
       </Flex>
     </Box>
   );

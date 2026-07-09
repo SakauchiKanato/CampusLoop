@@ -7,6 +7,28 @@ import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 const WEEKDAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
 
+// 各時限の終了時刻（分換算）。1限 09:00-10:30 ... 5限 16:20-17:50
+const PERIOD_END_MINUTES: Record<number, number> = {
+  1: 10 * 60 + 30,
+  2: 12 * 60 + 10,
+  3: 14 * 60 + 30,
+  4: 16 * 60 + 10,
+  5: 17 * 60 + 50,
+};
+
+/**
+ * 現在時刻から「いま進行中 or 次に来る時限」を返す。
+ * 例: 15:00 → 4限（14:40-16:10 の最中）。17:50 以降は null（今日の授業は終了）。
+ */
+export const getCurrentPeriod = (): number | null => {
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  for (const p of [1, 2, 3, 4, 5]) {
+    if (mins < PERIOD_END_MINUTES[p]) return p;
+  }
+  return null;
+};
+
 interface TimetableSlot {
   period: number;
   subject: string | null;
@@ -31,6 +53,8 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   // 今日の曜日（JS: 0=日, 1=月...6=土）
   const todayJs = new Date().getDay();
   const todayName = DAY_NAMES[todayJs];
+  // いま進行中（または次）の時限。授業時間終了後は null
+  const currentPeriod = getCurrentPeriod();
 
   // バックエンドの day_of_week は 1=月〜5=金
   const todayDb = WEEKDAY_MAP[todayJs]; // 0=日曜, 6=土曜 の場合はデータなし
@@ -91,8 +115,12 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
       }
       setTimetable(filled);
 
-      // 今日の最初の空きコマを対象にマッチ候補を取得
-      const freePeriod = filled.find((t) => t.is_free)?.period ?? null;
+      // 「現在時刻以降」の最初の空きコマを対象にマッチ候補を取得
+      // 例: いま15時なら 4限・5限 のうち空いている最初のコマ
+      const cur = getCurrentPeriod();
+      const freePeriod = cur
+        ? filled.find((t) => t.is_free && t.period >= cur)?.period ?? null
+        : null;
       setMatchPeriod(freePeriod);
       if (freePeriod) {
         fetchMatches(freePeriod);
@@ -161,7 +189,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   return (
     <VStack gap="lg" align="stretch">
       {/* 時間割セクション */}
-      <Box bg="white" p="md" borderRadius="xl" boxShadow="sm" border="1px solid" borderColor="gray.200">
+      <Box bg="white" p="md" borderRadius="2xl" boxShadow="0 4px 20px rgba(99,102,241,0.10)">
         <Flex justify="space-between" align="center" mb="md">
           <Heading as="h2" size="md" display="flex" alignItems="center" gap="xs">
             📅 今日の時間割 ({todayName}曜日)
@@ -176,37 +204,41 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
           <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
         ) : (
           <Grid templateColumns="repeat(5, 1fr)" gap="sm" mb="md">
-            {timetable.map((item) => (
-              <GridItem key={item.period}>
-                <Box textAlign="center" fontSize="xs" color="gray.500" mb="xs">
-                  {item.period}限
-                </Box>
-                <Flex
-                  direction="column"
-                  align="center"
-                  justify="center"
-                  h="60px"
-                  bg={item.is_free ? 'blue.50' : 'gray.100'}
-                  border="1px solid"
-                  borderColor={item.is_free ? 'blue.200' : 'gray.200'}
-                  borderRadius="md"
-                  p="xs"
-                >
-                  {item.is_free ? (
-                    <Text fontSize="sm" fontWeight="bold" color="blue.500">【空】</Text>
-                  ) : (
-                    <Text fontSize="xs" fontWeight="bold" color="gray.700" lineClamp={2}>
-                      {item.subject}
-                    </Text>
-                  )}
-                </Flex>
-              </GridItem>
-            ))}
+            {timetable.map((item) => {
+              const isNow = item.period === currentPeriod;
+              return (
+                <GridItem key={item.period}>
+                  <Box textAlign="center" fontSize="xs" color={isNow ? 'violet.600' : 'gray.500'} fontWeight={isNow ? 'bold' : 'normal'} mb="xs">
+                    {isNow ? `▶ ${item.period}限` : `${item.period}限`}
+                  </Box>
+                  <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    h="64px"
+                    bg={item.is_free ? 'blue.50' : 'gray.100'}
+                    border={isNow ? '2px solid' : '1px solid'}
+                    borderColor={isNow ? 'violet.400' : item.is_free ? 'blue.200' : 'gray.200'}
+                    borderRadius="lg"
+                    p="xs"
+                    boxShadow={isNow ? '0 2px 8px rgba(139,92,246,0.25)' : 'none'}
+                  >
+                    {item.is_free ? (
+                      <Text fontSize="sm" fontWeight="bold" color="blue.500">【空】</Text>
+                    ) : (
+                      <Text fontSize="xs" fontWeight="bold" color="gray.700" lineClamp={2}>
+                        {item.subject}
+                      </Text>
+                    )}
+                  </Flex>
+                </GridItem>
+              );
+            })}
           </Grid>
         )}
 
-        <Button w="full" variant="outline" colorScheme="gray" onClick={() => navigate('/timetable/edit')}>
-          タップして時間割を編集
+        <Button w="full" variant="outline" colorScheme="blue" borderRadius="full" onClick={() => navigate('/timetable/edit')}>
+          ✏️ タップして時間割を編集
         </Button>
       </Box>
 
@@ -222,29 +254,43 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
           <Box
             bg="white"
             p="lg"
-            borderRadius="xl"
-            border="1px solid"
-            borderColor="gray.200"
+            borderRadius="2xl"
+            boxShadow="0 4px 20px rgba(99,102,241,0.08)"
             textAlign="center"
             color="gray.400"
           >
-            <Text fontSize="sm">今は空きコマが一致するフレンドがいません</Text>
-            <Text fontSize="xs" mt="xs">マイページからフレンドを追加してみよう！</Text>
+            {currentPeriod === null ? (
+              <>
+                <Text fontSize="sm">今日の授業時間は終了しました 🌙</Text>
+                <Text fontSize="xs" mt="xs">また明日、空きコマで会いましょう！</Text>
+              </>
+            ) : matchPeriod === null ? (
+              <>
+                <Text fontSize="sm">このあと（{currentPeriod}限以降）の空きコマがありません</Text>
+                <Text fontSize="xs" mt="xs">時間割を編集して空きコマを登録してみよう！</Text>
+              </>
+            ) : (
+              <>
+                <Text fontSize="sm">いま{matchPeriod}限が空きコマのフレンドがいません</Text>
+                <Text fontSize="xs" mt="xs">マイページからフレンドを追加してみよう！</Text>
+              </>
+            )}
           </Box>
         ) : (
           <Grid templateColumns="repeat(auto-fill, minmax(140px, 1fr))" gap="md">
             {matchCandidates.map((candidate) => (
               <Box
                 key={candidate.friend_id}
-                border="1px solid"
-                borderColor="gray.200"
-                borderRadius="md"
-                boxShadow="sm"
+                bg="white"
+                borderRadius="2xl"
+                boxShadow="0 4px 16px rgba(99,102,241,0.10)"
                 p="md"
                 display="flex"
                 flexDirection="column"
                 alignItems="center"
                 gap="sm"
+                transition="transform 0.15s"
+                _hover={{ transform: 'translateY(-2px)' }}
               >
                 <Avatar name={candidate.username} size="md" />
                 <Box textAlign="center">
