@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+// HashRouter を使用：大学サーバーのサブディレクトリ（/~knt416/CampusLoop/...）配下でも
+// サーバー側のリライト設定なしでページ更新・直リンクが動作する
+import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Flex, Text } from '@yamada-ui/react';
 import { Settings, Home as HomeIcon, Users, User } from 'lucide-react';
 
@@ -204,7 +206,7 @@ function App() {
   const [showRegister, setShowRegister] = useState(false);
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       {!user ? (
         <Routes>
           <Route
@@ -220,7 +222,7 @@ function App() {
       ) : (
         <Layout user={user} userStatus={userStatus} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} />
       )}
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
