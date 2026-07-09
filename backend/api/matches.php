@@ -143,16 +143,6 @@ if ($method === 'POST') {
     $new_match = $stmt->fetch();
     $match_id  = (int)$new_match['id'];
 
-    // 初期メッセージ「一緒にお昼行かない？」を自動送信
-    $stmtMsg = $pdo->prepare(
-        'INSERT INTO messages (match_id, sender_id, content) VALUES (:match_id, :sender_id, :content)'
-    );
-    $stmtMsg->execute([
-        ':match_id'  => $match_id,
-        ':sender_id' => $from_user,
-        ':content'   => '一緒にお昼行かない？'
-    ]);
-    
     echo json_encode([
         'success'  => true,
         'message'  => '誘い出しを送信しました。',
@@ -179,26 +169,7 @@ if ($method === 'PUT') {
     
     $stmt = $pdo->prepare('UPDATE matches SET status = :status WHERE id = :match_id');
     $stmt->execute([':status' => $status, ':match_id' => $match_id]);
-    
-    // もし承認（accepted）されたら、自動でチャットの承諾メッセージを入れる
-    if ($status === 'accepted') {
-        // マッチの情報を取得
-        $stmtMatch = $pdo->prepare('SELECT to_user FROM matches WHERE id = :match_id');
-        $stmtMatch->execute([':match_id' => $match_id]);
-        $matchInfo = $stmtMatch->fetch();
-        
-        if ($matchInfo) {
-            $stmtMsg = $pdo->prepare(
-                'INSERT INTO messages (match_id, sender_id, content) VALUES (:match_id, :sender_id, :content)'
-            );
-            $stmtMsg->execute([
-                ':match_id'  => $match_id,
-                ':sender_id' => (int)$matchInfo['to_user'],
-                ':content'   => 'いいよ！今どこ？'
-            ]);
-        }
-    }
-    
+
     echo json_encode([
         'success' => true,
         'message' => 'ステータスを更新しました。'
