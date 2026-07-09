@@ -51,17 +51,28 @@ if ($method === 'GET') {
         $msg['sender_id']  = (int)$msg['sender_id'];
     }
     
-    // 対話相手（自分ではないほう）の情報もついでに返す
-    $stmtMatch = $pdo->prepare('SELECT from_user, to_user FROM matches WHERE id = :match_id');
+    // 対話相手（自分ではないほう）の情報もついでに返す（ユーザー名付き）
+    $stmtMatch = $pdo->prepare(
+        'SELECT m.from_user, m.to_user, m.status, m.period,
+                fu.username AS from_username, tu.username AS to_username
+         FROM matches m
+         JOIN users fu ON m.from_user = fu.id
+         JOIN users tu ON m.to_user = tu.id
+         WHERE m.id = :match_id'
+    );
     $stmtMatch->execute([':match_id' => $match_id]);
     $match = $stmtMatch->fetch();
-    
+
     echo json_encode([
         'success'  => true,
         'messages' => $messages,
         'match_info' => $match ? [
-            'from_user' => (int)$match['from_user'],
-            'to_user'   => (int)$match['to_user']
+            'from_user'     => (int)$match['from_user'],
+            'to_user'       => (int)$match['to_user'],
+            'from_username' => $match['from_username'],
+            'to_username'   => $match['to_username'],
+            'status'        => $match['status'],
+            'period'        => (int)$match['period']
         ] : null
     ]);
     exit;

@@ -3,7 +3,7 @@ import { Box, Flex, VStack, Heading, Text, Avatar, Button, IconButton } from '@y
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
 
 const PERIOD_TIMES: Record<number, string> = {
   1: '09:00〜10:30',
@@ -21,6 +21,7 @@ interface MatchCandidate {
   status_level: string;
   status_comment: string | null;
   match_id: number | null;
+  match_from_user: number | null;
   match_status: string | null;
 }
 
@@ -78,6 +79,23 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
       alert('誘いの送信に失敗しました。');
     } finally {
       setInvitingId(null);
+    }
+  };
+
+  // 誘いへの返事（承諾 or 拒否）
+  const handleRespond = async (matchId: number, status: 'accepted' | 'rejected') => {
+    try {
+      const res = await apiPut<{ success: boolean; message?: string }>(API_ENDPOINTS.matches, {
+        match_id: matchId,
+        status,
+      });
+      if (res.success && status === 'accepted') {
+        navigate(`/chat/${matchId}`);
+      } else {
+        fetchCandidates(period);
+      }
+    } catch {
+      alert('返答の送信に失敗しました。');
     }
   };
 
@@ -172,6 +190,19 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
                             candidate.match_status === 'accepted' ? (
                               <Button size="sm" colorScheme="green" variant="outline" onClick={() => navigate(`/chat/${candidate.match_id}`)}>
                                 チャットへ
+                              </Button>
+                            ) : candidate.match_status === 'pending' && candidate.match_from_user !== user!.id ? (
+                              <Flex gap="xs">
+                                <Button size="sm" colorScheme="green" onClick={() => handleRespond(candidate.match_id!, 'accepted')}>
+                                  承諾
+                                </Button>
+                                <Button size="sm" colorScheme="red" variant="outline" onClick={() => handleRespond(candidate.match_id!, 'rejected')}>
+                                  断る
+                                </Button>
+                              </Flex>
+                            ) : candidate.match_status === 'rejected' ? (
+                              <Button size="sm" colorScheme="gray" variant="outline" disabled>
+                                不成立
                               </Button>
                             ) : (
                               <Button size="sm" colorScheme="gray" variant="outline" disabled>

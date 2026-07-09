@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 const WEEKDAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
@@ -21,6 +21,7 @@ interface MatchCandidate {
   status_level: string;
   status_comment: string | null;
   match_id: number | null;
+  match_from_user: number | null;
   match_status: string | null;
 }
 
@@ -140,6 +141,23 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
     }
   };
 
+  // 誘いへの返事（承諾 or 拒否）
+  const handleRespond = async (matchId: number, status: 'accepted' | 'rejected') => {
+    try {
+      const res = await apiPut<{ success: boolean; message?: string }>(API_ENDPOINTS.matches, {
+        match_id: matchId,
+        status,
+      });
+      if (res.success && status === 'accepted') {
+        navigate(`/chat/${matchId}`);
+      } else if (matchPeriod) {
+        fetchMatches(matchPeriod);
+      }
+    } catch {
+      alert('返答の送信に失敗しました。');
+    }
+  };
+
   return (
     <VStack gap="lg" align="stretch">
       {/* 時間割セクション */}
@@ -239,16 +257,32 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
                     <Text fontSize="xs" color="gray.500" mt="xs" lineClamp={1}>「{candidate.status_comment}」</Text>
                   )}
                 </Box>
-                <Button
-                  size="sm"
-                  colorScheme="blue"
-                  w="full"
-                  mt="auto"
-                  disabled={!!candidate.match_id}
-                  onClick={() => handleInvite(candidate.friend_id)}
-                >
-                  {candidate.match_id ? '誘い済み' : '誘う'}
-                </Button>
+                {!candidate.match_id ? (
+                  <Button size="sm" colorScheme="blue" w="full" mt="auto" onClick={() => handleInvite(candidate.friend_id)}>
+                    誘う
+                  </Button>
+                ) : candidate.match_status === 'accepted' ? (
+                  <Button size="sm" colorScheme="green" w="full" mt="auto" onClick={() => navigate(`/chat/${candidate.match_id}`)}>
+                    チャットへ
+                  </Button>
+                ) : candidate.match_status === 'pending' && candidate.match_from_user !== user!.id ? (
+                  <Flex gap="xs" w="full" mt="auto">
+                    <Button size="sm" colorScheme="green" flex="1" onClick={() => handleRespond(candidate.match_id!, 'accepted')}>
+                      承諾
+                    </Button>
+                    <Button size="sm" colorScheme="red" variant="outline" flex="1" onClick={() => handleRespond(candidate.match_id!, 'rejected')}>
+                      断る
+                    </Button>
+                  </Flex>
+                ) : candidate.match_status === 'rejected' ? (
+                  <Button size="sm" colorScheme="gray" w="full" mt="auto" disabled>
+                    不成立
+                  </Button>
+                ) : (
+                  <Button size="sm" colorScheme="gray" w="full" mt="auto" disabled>
+                    誘い済み
+                  </Button>
+                )}
               </Box>
             ))}
           </Grid>

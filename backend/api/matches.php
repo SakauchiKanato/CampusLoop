@@ -19,6 +19,10 @@ if (!in_array($method, ['GET', 'POST', 'PUT'])) {
 
 $pdo = get_db();
 
+// 誘い（とそのチャット）は「その日限り」のもの。
+// 前日以前のマッチを削除する（messages は ON DELETE CASCADE で一緒に消える）
+$pdo->exec('DELETE FROM matches WHERE created_at < CURRENT_DATE');
+
 // ==============================
 // GET: 特定時限の空きコママッチ候補一覧
 // ==============================
