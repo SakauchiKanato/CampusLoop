@@ -32,11 +32,12 @@ export default function Login({ onLogin, onGoRegister }: { onLogin: (user: any) 
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg="gray.50" p="md">
-      <Box bg="white" p="xl" borderRadius="xl" boxShadow="md" w="full" maxW="400px">
+    <Flex minH="100vh" align="center" justify="center" p="md">
+      <Box bg="white" p="xl" borderRadius="2xl" boxShadow="0 10px 40px rgba(99,102,241,0.18)" w="full" maxW="400px">
         <VStack as="form" onSubmit={handleSubmit} gap="md">
           <Box textAlign="center" mb="md">
-            <Heading as="h1" size="lg" color="blue.500" mb="xs">CampusLoop</Heading>
+            <Text fontSize="4xl" lineHeight="1">⚡</Text>
+            <Heading as="h1" size="lg" color="violet.600" mb="xs">スキマッチ</Heading>
             <Text color="gray.500" fontSize="sm">空きコマを、いちばん楽しい時間に。</Text>
           </Box>
 
@@ -56,7 +57,7 @@ export default function Login({ onLogin, onGoRegister }: { onLogin: (user: any) 
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="パスワードを入力" required />
           </Box>
 
-          <Button type="submit" colorScheme="blue" w="full" mt="md" loading={isLoading}>
+          <Button type="submit" colorScheme="violet" w="full" mt="md" borderRadius="full" loading={isLoading}>
             ログイン
           </Button>
 

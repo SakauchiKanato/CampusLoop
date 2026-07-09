@@ -114,7 +114,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
       </Flex>
 
       {/* プロフィールカード */}
-      <Box border="1px solid" borderColor="gray.200" borderRadius="md" p="md" boxShadow="sm">
+      <Box bg="white" borderRadius="2xl" p="md" boxShadow="0 4px 16px rgba(99,102,241,0.10)">
         <Flex gap="md" align="center" justify="space-between">
           <Flex gap="md" align="center">
             <Avatar size="lg" name={user?.username || ''} />

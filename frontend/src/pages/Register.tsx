@@ -69,11 +69,12 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg="gray.50" p="md">
-      <Box bg="white" p="xl" borderRadius="xl" boxShadow="md" w="full" maxW="420px">
+    <Flex minH="100vh" align="center" justify="center" p="md">
+      <Box bg="white" p="xl" borderRadius="2xl" boxShadow="0 10px 40px rgba(99,102,241,0.18)" w="full" maxW="420px">
         <VStack as="form" onSubmit={handleSubmit} gap="md">
           <Box textAlign="center" mb="sm">
-            <Heading as="h1" size="lg" color="blue.500" mb="xs">CampusLoop</Heading>
+            <Text fontSize="4xl" lineHeight="1">⚡</Text>
+            <Heading as="h1" size="lg" color="violet.600" mb="xs">スキマッチ</Heading>
             <Text color="gray.500" fontSize="sm">新規アカウント登録</Text>
           </Box>
 
@@ -192,7 +193,7 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
             />
           </Box>
 
-          <Button type="submit" colorScheme="blue" w="full" mt="md" loading={isLoading}>
+          <Button type="submit" colorScheme="violet" w="full" mt="md" borderRadius="full" loading={isLoading}>
             アカウントを作成
           </Button>
 
