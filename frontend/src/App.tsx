@@ -32,7 +32,7 @@ import Chat from './pages/Chat';
 import MyPage from './pages/MyPage';
 import ProfileEdit from './pages/ProfileEdit';
 
-function Layout({ user, userStatus, onLogout, onProfileUpdate }: { user: LoggedInUser, userStatus: UserStatus, onLogout: () => void, onProfileUpdate: (updatedUser: LoggedInUser) => void }) {
+function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }: { user: LoggedInUser, userStatus: UserStatus, onLogout: () => void, onProfileUpdate: (updatedUser: LoggedInUser) => void, onStatusUpdated: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -113,7 +113,7 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate }: { user: LoggedI
           <Route path="/" element={<Home user={user} />} />
           <Route path="/matches" element={<MatchList user={user} />} />
           <Route path="/timetable/edit" element={<TimetableEdit user={user} />} />
-          <Route path="/status/edit" element={<StatusSetting user={user} />} />
+          <Route path="/status/edit" element={<StatusSetting user={user} onStatusUpdated={onStatusUpdated} />} />
           <Route path="/chat/:matchId" element={<Chat user={user} />} />
           <Route path="/mypage" element={<MyPage user={user} onLogout={onLogout} />} />
           <Route path="/profile/edit" element={<ProfileEdit user={user} onProfileUpdate={onProfileUpdate} />} />
@@ -154,8 +154,20 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate }: { user: LoggedI
   );
 }
 
+// ログイン状態の保存キー（リロードしてもログアウトされないように localStorage に保持）
+const STORAGE_KEY = 'campusloop_user';
+
+const loadSavedUser = (): LoggedInUser | null => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? (JSON.parse(saved) as LoggedInUser) : null;
+  } catch {
+    return null;
+  }
+};
+
 function App() {
-  const [user, setUser] = useState<LoggedInUser | null>(null);
+  const [user, setUser] = useState<LoggedInUser | null>(loadSavedUser);
   const [userStatus, setUserStatus] = useState<UserStatus>({
     level: 'busy',
     comment: '',
@@ -185,15 +197,18 @@ function App() {
 
   const handleLogin = (loggedInUser: LoggedInUser) => {
     setUser(loggedInUser);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedInUser)); } catch { /* 保存失敗時は無視 */ }
   };
 
   const handleProfileUpdate = (updatedUser: LoggedInUser) => {
     setUser(updatedUser);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser)); } catch { /* 保存失敗時は無視 */ }
   };
 
   const handleLogout = () => {
     if (window.confirm('ログアウトしますか？')) {
       setUser(null);
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* 無視 */ }
       setUserStatus({
         level: 'busy',
         comment: '',
@@ -220,7 +235,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       ) : (
-        <Layout user={user} userStatus={userStatus} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} />
+        <Layout user={user} userStatus={userStatus} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate} onStatusUpdated={fetchUserStatus} />
       )}
     </HashRouter>
   );
