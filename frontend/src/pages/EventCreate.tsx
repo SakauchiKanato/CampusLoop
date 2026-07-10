@@ -8,11 +8,11 @@ import { API_ENDPOINTS, apiPost } from '../lib/api';
 const CAMPUS_OPTIONS = ['有明キャンパス', '武蔵野キャンパス'];
 
 const PERIOD_LABELS: Record<number, string> = {
-  1: '1限 (09:00-10:30)',
+  1: '1限 (08:50-10:30)',
   2: '2限 (10:40-12:10)',
-  3: '3限 (13:00-14:30)',
-  4: '4限 (14:40-16:10)',
-  5: '5限 (16:20-17:50)',
+  3: '3限 (13:10-14:50)',
+  4: '4限 (15:00-16:40)',
+  5: '5限 (16:50-18:30)',
 };
 
 // 今日の日付を YYYY-MM-DD で返す
@@ -100,7 +100,7 @@ export default function EventCreate({ user }: { user: LoggedInUser | null }) {
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="例: 芝生広場アコギ新歓ライブ！"
+              placeholder="例: ロハスカフェで100円朝食！"
               maxLength={100}
               required
             />
@@ -138,7 +138,7 @@ export default function EventCreate({ user }: { user: LoggedInUser | null }) {
               <Input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="例: 芝生広場"
+                placeholder="例: ロハスカフェ"
               />
             </Box>
             <Box flex={1}>
@@ -162,7 +162,7 @@ export default function EventCreate({ user }: { user: LoggedInUser | null }) {
               as="textarea"
               value={description}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-              placeholder="例: 3限空きコマの人、芝生に集まれー！見学だけでも歓迎です🎸"
+              placeholder="例: ロハスカフェが朝食がないあなたへ100円で提供するよ！🍚"
               rows={3}
               w="full"
               p="sm"
