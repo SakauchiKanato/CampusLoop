@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input, NativeSelect } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import type { LoggedInUser, UserStatus } from '../App';
@@ -115,21 +115,15 @@ export default function StatusSetting({ user, onStatusUpdated }: Props) {
       <Box>
         <Text fontSize="sm" fontWeight="bold" mb="sm">⏱ このステータスの有効時間</Text>
         <Flex align="center" gap="sm">
-          <Box
-            as="select"
-            p="xs"
-            border="1px solid"
-            borderColor="gray.200"
-            borderRadius="md"
+          <NativeSelect.Root
             value={duration}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDuration(e.target.value)}
-            w="120px"
-            bg="white"
+            onChange={(e) => setDuration(e.target.value)}
+            rootProps={{ w: '140px' }}
           >
-            <option value="1">1 時間</option>
-            <option value="2">2 時間</option>
-            <option value="3">3 時間</option>
-          </Box>
+            <NativeSelect.Option value="1">1 時間</NativeSelect.Option>
+            <NativeSelect.Option value="2">2 時間</NativeSelect.Option>
+            <NativeSelect.Option value="3">3 時間</NativeSelect.Option>
+          </NativeSelect.Root>
           <Text fontSize="sm" color="gray.500">（自動でOFFに）</Text>
         </Flex>
       </Box>

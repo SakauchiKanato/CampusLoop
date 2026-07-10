@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button, Loading } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
@@ -293,7 +293,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
             <Text fontSize="sm">今日は{todayName}曜日です。授業はお休みです 🎉</Text>
           </Box>
         ) : loadingTimetable ? (
-          <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+          <Flex justify="center" py="lg"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
         ) : (
           <Grid templateColumns="repeat(5, 1fr)" gap="sm" mb="md">
             {timetable.map((item) => {
@@ -341,7 +341,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
         </Heading>
 
         {loadingMatches ? (
-          <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+          <Flex justify="center" py="lg"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
         ) : matchCandidates.length === 0 ? (
           <Box
             bg="white"
@@ -439,7 +439,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
         </Flex>
 
         {loadingEvents ? (
-          <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+          <Flex justify="center" py="lg"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
         ) : events.length === 0 ? (
           <Box
             bg="white"

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Flex, VStack, Heading, Input, Button, Text } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Input, Button, Text, NativeSelect } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiPut } from '../lib/api';
 import type { LoggedInUser } from '../App';
@@ -128,43 +128,27 @@ export default function ProfileEdit({ user, onProfileUpdate }: ProfileEditProps)
           <Flex gap="sm">
             <Box flex={2}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">学部</Text>
-              <Box
-                as="select"
+              <NativeSelect.Root
+                placeholder="学部を選択"
                 value={faculty}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFaculty(e.target.value)}
-                w="full"
-                p="sm"
-                border="1px solid"
-                borderColor="gray.200"
-                borderRadius="md"
-                bg="white"
-                fontSize="sm"
+                onChange={(e) => setFaculty(e.target.value)}
               >
-                <option value="">学部を選択</option>
                 {FACULTY_OPTIONS.map((f) => (
-                  <option key={f} value={f}>{f}</option>
+                  <NativeSelect.Option key={f} value={f}>{f}</NativeSelect.Option>
                 ))}
-              </Box>
+              </NativeSelect.Root>
             </Box>
             <Box flex={1}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">学年</Text>
-              <Box
-                as="select"
+              <NativeSelect.Root
+                placeholder="学年"
                 value={year}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setYear(e.target.value)}
-                w="full"
-                p="sm"
-                border="1px solid"
-                borderColor="gray.200"
-                borderRadius="md"
-                bg="white"
-                fontSize="sm"
+                onChange={(e) => setYear(e.target.value)}
               >
-                <option value="">学年</option>
                 {['1年', '2年', '3年', '4年'].map((y) => (
-                  <option key={y} value={y}>{y}</option>
+                  <NativeSelect.Option key={y} value={y}>{y}</NativeSelect.Option>
                 ))}
-              </Box>
+              </NativeSelect.Root>
             </Box>
           </Flex>
 
@@ -179,22 +163,11 @@ export default function ProfileEdit({ user, onProfileUpdate }: ProfileEditProps)
 
           <Box>
             <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">キャンパス</Text>
-            <Box
-              as="select"
-              value={campus}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCampus(e.target.value)}
-              w="full"
-              p="sm"
-              border="1px solid"
-              borderColor="gray.200"
-              borderRadius="md"
-              bg="white"
-              fontSize="sm"
-            >
+            <NativeSelect.Root value={campus} onChange={(e) => setCampus(e.target.value)}>
               {CAMPUS_OPTIONS.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <NativeSelect.Option key={c} value={c}>{c}</NativeSelect.Option>
               ))}
-            </Box>
+            </NativeSelect.Root>
           </Box>
 
           <Button type="submit" colorScheme="blue" w="full" mt="sm" loading={isLoading}>

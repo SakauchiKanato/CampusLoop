@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Box, Flex, VStack, Heading, Text, Button, Avatar, Badge, Wrap,
-  Input,
+  Input, Modal, Loading,
 } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
@@ -153,7 +153,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
         </Flex>
 
         {loadingFriends ? (
-          <Flex justify="center" py="md"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+          <Flex justify="center" py="md"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
         ) : friends.length === 0 ? (
           <Box
             bg="gray.50"
@@ -178,29 +178,9 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
       </Box>
 
       {/* 友達追加モーダル */}
-      {isModalOpen && (
-      <Box position="fixed" inset={0} zIndex={200}>
-        {/* オーバーレイ */}
-        <Box position="absolute" inset={0} bg="blackAlpha.500" onClick={closeModal} />
-        {/* モーダル本体 */}
-        <Box
-          position="absolute"
-          top="50%"
-          left="50%"
-          transform="translate(-50%, -50%)"
-          bg="white"
-          borderRadius="xl"
-          boxShadow="lg"
-          w="calc(100% - 32px)"
-          maxW="420px"
-          maxH="80vh"
-          overflowY="auto"
-          p="lg"
-        >
-          <Flex justify="space-between" align="center" mb="md">
-            <Heading as="h3" size="sm">友達を追加</Heading>
-            <Button size="xs" variant="ghost" colorScheme="gray" onClick={closeModal}>✕</Button>
-          </Flex>
+      <Modal.Root open={isModalOpen} onClose={closeModal} size="md">
+        <Modal.Header>友達を追加</Modal.Header>
+        <Modal.Body pb="lg">
           <VStack gap="md" align="stretch">
             <Text fontSize="sm" color="gray.500">
               ユーザー名またはユーザーIDで検索してください
@@ -272,9 +252,8 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
               </Text>
             )}
           </VStack>
-        </Box>
-      </Box>
-      )}
+        </Modal.Body>
+      </Modal.Root>
     </VStack>
   );
 }
