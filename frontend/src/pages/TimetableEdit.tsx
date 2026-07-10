@@ -8,7 +8,7 @@ import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
 const DAYS = ['月', '火', '水', '木', '金'];
 const PERIOD_TIMES: Record<number, string> = {
   1: '08:50-10:30',
-  2: '10:40-12:10',
+  2: '10:40-12:20',
   3: '13:10-14:50',
   4: '15:00-16:40',
   5: '16:50-18:30',
@@ -178,15 +178,26 @@ export default function TimetableEdit({ user }: { user: LoggedInUser | null }) {
                 <Text fontWeight="bold">{item.period}限 <Text as="span" fontSize="xs" color="gray.500" fontWeight="normal">({PERIOD_TIMES[item.period]})</Text></Text>
               </Flex>
 
-              <Flex gap="md" mb={!item.isFree ? 'sm' : '0'}>
-                <Box as="label" display="flex" alignItems="center" gap="xs" cursor="pointer">
-                  <input type="radio" name={`period-${index}`} value="class" checked={!item.isFree} onChange={() => handleStatusChange(index, 'class')} />
-                  <Text fontSize="sm">授業あり</Text>
-                </Box>
-                <Box as="label" display="flex" alignItems="center" gap="xs" cursor="pointer">
-                  <input type="radio" name={`period-${index}`} value="free" checked={item.isFree} onChange={() => handleStatusChange(index, 'free')} />
-                  <Text fontSize="sm">空きコマ</Text>
-                </Box>
+              {/* 授業あり / 空きコマ の切り替えボタン */}
+              <Flex gap="sm" mb={!item.isFree ? 'sm' : '0'}>
+                <Button
+                  size="sm"
+                  flex="1"
+                  variant={!item.isFree ? 'solid' : 'outline'}
+                  colorScheme={!item.isFree ? 'blue' : 'gray'}
+                  onClick={() => handleStatusChange(index, 'class')}
+                >
+                  📚 授業あり
+                </Button>
+                <Button
+                  size="sm"
+                  flex="1"
+                  variant={item.isFree ? 'solid' : 'outline'}
+                  colorScheme={item.isFree ? 'violet' : 'gray'}
+                  onClick={() => handleStatusChange(index, 'free')}
+                >
+                  ⏰ 空きコマ
+                </Button>
               </Flex>
 
               {!item.isFree && (

@@ -8,7 +8,7 @@ import { getCurrentPeriod } from '../lib/periods';
 
 const PERIOD_TIMES: Record<number, string> = {
   1: '08:50〜10:30',
-  2: '10:40〜12:10',
+  2: '10:40〜12:20',
   3: '13:10〜14:50',
   4: '15:00〜16:40',
   5: '16:50〜18:30',
