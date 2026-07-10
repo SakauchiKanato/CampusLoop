@@ -7,11 +7,11 @@ import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
 import { getCurrentPeriod } from './Home';
 
 const PERIOD_TIMES: Record<number, string> = {
-  1: '09:00〜10:30',
+  1: '08:50〜10:30',
   2: '10:40〜12:10',
-  3: '13:00〜14:30',
-  4: '14:40〜16:10',
-  5: '16:20〜17:50',
+  3: '13:10〜14:50',
+  4: '15:00〜16:40',
+  5: '16:50〜18:30',
 };
 
 interface MatchCandidate {
