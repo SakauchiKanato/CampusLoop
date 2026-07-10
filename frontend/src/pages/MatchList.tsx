@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Avatar, Button, IconButton } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Avatar, Button, IconButton, Loading } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { LoggedInUser } from '../App';
@@ -205,7 +205,7 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
       )}
 
       {loading ? (
-        <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+        <Flex justify="center" py="lg"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
       ) : candidates.length === 0 ? (
         <Box
           bg="white"

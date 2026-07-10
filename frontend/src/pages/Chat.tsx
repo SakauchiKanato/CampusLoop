@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Flex, VStack, Heading, Text, IconButton, Input, Button, Avatar, Wrap } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, IconButton, Input, Button, Avatar, Wrap, Loading } from '@yamada-ui/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Send } from 'lucide-react';
 import type { LoggedInUser } from '../App';
@@ -116,7 +116,7 @@ export default function Chat({ user }: { user: LoggedInUser | null }) {
 
       <VStack flex="1" overflowY="auto" gap="md" px="xs" pb="md">
         {loading ? (
-          <Text fontSize="sm" color="gray.400" textAlign="center" py="lg">読み込み中…</Text>
+          <Loading.Dots fontSize="2xl" color="violet.500" py="lg" />
         ) : messages.length === 0 ? (
           <Text fontSize="sm" color="gray.400" textAlign="center" py="lg">まだメッセージがありません</Text>
         ) : (

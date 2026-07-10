@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input, Loading } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import type { LoggedInUser } from '../App';
@@ -166,7 +166,7 @@ export default function TimetableEdit({ user }: { user: LoggedInUser | null }) {
       <Box w="full" h="1px" bg="gray.200" />
 
       {loading ? (
-        <Flex justify="center" py="lg"><Text fontSize="sm" color="gray.400">読み込み中…</Text></Flex>
+        <Flex justify="center" py="lg"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
       ) : (
         <VStack gap="md" align="stretch">
           {timetable.map((item, index) => (

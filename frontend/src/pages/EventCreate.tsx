@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input, NativeSelect, Textarea } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import type { LoggedInUser } from '../App';
@@ -62,16 +62,6 @@ export default function EventCreate({ user }: { user: LoggedInUser | null }) {
     }
   };
 
-  const selectStyle = {
-    w: 'full',
-    p: 'sm',
-    border: '1px solid',
-    borderColor: 'gray.200',
-    borderRadius: 'md',
-    bg: 'white',
-    fontSize: 'sm',
-  } as const;
-
   return (
     <VStack gap="lg" align="stretch">
       <Flex align="center" justify="space-between" mb="sm">
@@ -119,16 +109,11 @@ export default function EventCreate({ user }: { user: LoggedInUser | null }) {
             </Box>
             <Box flex={1}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">時限</Text>
-              <Box
-                as="select"
-                value={period}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPeriod(e.target.value)}
-                {...selectStyle}
-              >
+              <NativeSelect.Root value={period} onChange={(e) => setPeriod(e.target.value)}>
                 {[1, 2, 3, 4, 5].map((p) => (
-                  <option key={p} value={p}>{PERIOD_LABELS[p]}</option>
+                  <NativeSelect.Option key={p} value={String(p)}>{PERIOD_LABELS[p]}</NativeSelect.Option>
                 ))}
-              </Box>
+              </NativeSelect.Root>
             </Box>
           </Flex>
 
@@ -143,35 +128,21 @@ export default function EventCreate({ user }: { user: LoggedInUser | null }) {
             </Box>
             <Box flex={1}>
               <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">キャンパス</Text>
-              <Box
-                as="select"
-                value={campus}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCampus(e.target.value)}
-                {...selectStyle}
-              >
+              <NativeSelect.Root value={campus} onChange={(e) => setCampus(e.target.value)}>
                 {CAMPUS_OPTIONS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <NativeSelect.Option key={c} value={c}>{c}</NativeSelect.Option>
                 ))}
-              </Box>
+              </NativeSelect.Root>
             </Box>
           </Flex>
 
           <Box>
             <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">ひとこと説明（任意）</Text>
-            <Box
-              as="textarea"
+            <Textarea
               value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="例: ロハスカフェが朝食がないあなたへ100円で提供するよ！🍚"
               rows={3}
-              w="full"
-              p="sm"
-              border="1px solid"
-              borderColor="gray.200"
-              borderRadius="md"
-              fontSize="sm"
-              fontFamily="inherit"
-              resize="vertical"
             />
           </Box>
 
