@@ -34,10 +34,6 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
   const [addMessage, setAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (user) fetchFriends();
-  }, [user]);
-
   const fetchFriends = async () => {
     setLoadingFriends(true);
     try {
@@ -53,6 +49,12 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
       setLoadingFriends(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 再取得時のローディング表示に必要
+    if (user) fetchFriends();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;

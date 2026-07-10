@@ -44,16 +44,6 @@ export default function TimetableEdit({ user }: { user: LoggedInUser | null }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchTimetable();
-  }, [user]);
-
-  // 曜日切り替え時に該当曜日のデータを反映
-  useEffect(() => {
-    applyDay(allRows, selectedDay);
-  }, [selectedDay, allRows]);
-
   const applyDay = (rows: ApiTimetableRow[], day: number) => {
     const dayRows = rows.filter((r) => r.day_of_week === day);
     setTimetable(
@@ -81,6 +71,19 @@ export default function TimetableEdit({ user }: { user: LoggedInUser | null }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 再取得時のローディング表示に必要
+    fetchTimetable();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // 曜日切り替え時に該当曜日のデータを反映
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 曜日切替時にフォームへ反映するため
+    applyDay(allRows, selectedDay);
+  }, [selectedDay, allRows]);
 
   const handleStatusChange = (index: number, val: string) => {
     const newTimetable = [...timetable];

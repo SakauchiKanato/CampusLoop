@@ -232,12 +232,6 @@ function App() {
     is_active: false
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchUserStatus();
-    }
-  }, [user]);
-
   const fetchUserStatus = async () => {
     if (!user) return;
     try {
@@ -251,6 +245,14 @@ function App() {
       console.error('ステータスの取得に失敗しました', e);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 再取得時のローディング表示に必要
+      fetchUserStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleLogin = (loggedInUser: LoggedInUser) => {
     setUser(loggedInUser);

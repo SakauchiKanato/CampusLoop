@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Box, Flex, VStack, Heading, Input, Button, Text } from '@yamada-ui/react';
 import { API_ENDPOINTS, apiPost } from '../lib/api';
+import type { LoggedInUser } from '../App';
 
-export default function Login({ onLogin, onGoRegister }: { onLogin: (user: any) => void; onGoRegister?: () => void }) {
+export default function Login({ onLogin, onGoRegister }: { onLogin: (user: LoggedInUser) => void; onGoRegister?: () => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +15,7 @@ export default function Login({ onLogin, onGoRegister }: { onLogin: (user: any) 
     setIsLoading(true);
 
     try {
-      const res = await apiPost<{ success: boolean; user?: any; message?: string }>(API_ENDPOINTS.login, {
+      const res = await apiPost<{ success: boolean; user?: LoggedInUser; message?: string }>(API_ENDPOINTS.login, {
         username,
         password,
       });

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Box, Flex, VStack, Heading, Input, Button, Text, NativeSelect } from '@yamada-ui/react';
 import { API_ENDPOINTS, apiPost } from '../lib/api';
+import type { LoggedInUser } from '../App';
 
 const FACULTY_OPTIONS = [
   '文学部',
@@ -24,7 +25,7 @@ const YEAR_OPTIONS = ['1年', '2年', '3年', '4年'];
 
 const CAMPUS_OPTIONS = ['有明キャンパス', '武蔵野キャンパス'];
 
-export default function Register({ onRegister, onGoLogin }: { onRegister: (user: any) => void; onGoLogin: () => void }) {
+export default function Register({ onRegister, onGoLogin }: { onRegister: (user: LoggedInUser) => void; onGoLogin: () => void }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +48,7 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
 
     setIsLoading(true);
     try {
-      const res = await apiPost<{ success: boolean; user?: any; message?: string }>(API_ENDPOINTS.register, {
+      const res = await apiPost<{ success: boolean; user?: LoggedInUser; message?: string }>(API_ENDPOINTS.register, {
         username,
         email,
         password,
