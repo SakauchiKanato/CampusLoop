@@ -3,31 +3,10 @@ import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button, Loadi
 import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
+import { getCurrentPeriod } from '../lib/periods';
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 const WEEKDAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
-
-// 各時限の終了時刻（分換算）。1限 09:00-10:30 ... 5限 16:20-17:50
-const PERIOD_END_MINUTES: Record<number, number> = {
-  1: 10 * 60 + 30,
-  2: 12 * 60 + 20,
-  3: 14 * 60 + 50,
-  4: 16 * 60 + 40,
-  5: 18 * 60 + 30,
-};
-
-/**
- * 現在時刻から「いま進行中 or 次に来る時限」を返す。
- * 例: 15:00 → 4限（14:40-16:10 の最中）。17:50 以降は null（今日の授業は終了）。
- */
-export const getCurrentPeriod = (): number | null => {
-  const now = new Date();
-  const mins = now.getHours() * 60 + now.getMinutes();
-  for (const p of [1, 2, 3, 4, 5]) {
-    if (mins < PERIOD_END_MINUTES[p]) return p;
-  }
-  return null;
-};
 
 interface TimetableSlot {
   period: number;
@@ -111,12 +90,6 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
       default: return '不明';
     }
   };
-
-  useEffect(() => {
-    if (!user) return;
-    fetchTimetable();
-    fetchEvents();
-  }, [user]);
 
   const fetchEvents = async () => {
     setLoadingEvents(true);
@@ -277,6 +250,14 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
       alert('返答の送信に失敗しました。');
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 再取得時のローディング表示に必要
+    fetchTimetable();
+    fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <VStack gap="lg" align="stretch">
@@ -476,7 +457,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
                     </Flex>
                     <Text fontSize="xs" color="gray.500">
                       🗓 {formatEventDate(ev.event_date)}・{ev.period}限
-                      {ev.location ? `　📍 ${ev.location}` : ''}　🏫 {ev.campus}
+                      {ev.location ? '　📍 ' + ev.location : ''}{'　'}🏫 {ev.campus}
                     </Text>
                     {ev.description && (
                       <Text fontSize="sm" color="gray.700" mt="xs">「{ev.description}」</Text>

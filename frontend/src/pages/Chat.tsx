@@ -62,9 +62,11 @@ export default function Chat({ user }: { user: LoggedInUser | null }) {
 
   // 初回読み込み＋5秒ごとにポーリングして相手のメッセージを受信
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 初回ローディング表示に必要
     fetchMessages();
     const timer = setInterval(fetchMessages, 5000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
   // 新着メッセージで一番下までスクロール

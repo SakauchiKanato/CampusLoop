@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
-import { getCurrentPeriod } from './Home';
+import { getCurrentPeriod } from '../lib/periods';
 
 const PERIOD_TIMES: Record<number, string> = {
   1: '08:50〜10:30',
@@ -51,21 +51,9 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
   const [period, setPeriod] = useState(currentPeriod ?? 5);
   const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [invites, setInvites] = useState<PendingInvite[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 土日は取得しないので、最初からローディング表示しない
+  const [loading, setLoading] = useState(!isWeekend);
   const [invitingId, setInvitingId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!user || isWeekend) {
-      setLoading(false);
-      return;
-    }
-    fetchCandidates(period);
-  }, [user, period]);
-
-  useEffect(() => {
-    if (!user || isWeekend) return;
-    fetchInvites();
-  }, [user]);
 
   // 自分宛の未応答の誘いを取得
   const fetchInvites = async () => {
@@ -92,6 +80,20 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!user || isWeekend) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 時限切替時のローディング表示に必要
+    fetchCandidates(period);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, period]);
+
+  useEffect(() => {
+    if (!user || isWeekend) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 取得結果の反映に必要
+    fetchInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleInvite = async (toUserId: number) => {
     setInvitingId(toUserId);
