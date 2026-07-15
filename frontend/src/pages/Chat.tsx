@@ -3,12 +3,13 @@ import { Box, Flex, VStack, Heading, Text, IconButton, Input, Button, Avatar, Wr
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Send } from 'lucide-react';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, resolveAvatarUrl } from '../lib/api';
 
 interface ApiMessage {
   message_id: number;
   sender_id: number;
   sender_name: string;
+  sender_avatar_url: string | null;
   content: string;
   created_at: string;
 }
@@ -126,7 +127,7 @@ export default function Chat({ user }: { user: LoggedInUser | null }) {
             const isMe = msg.sender_id === user?.id;
             return (
               <Flex key={msg.message_id} w="full" justify={isMe ? 'flex-end' : 'flex-start'} gap="sm" align="flex-end">
-                {!isMe && <Avatar name={msg.sender_name} size="sm" />}
+                {!isMe && <Avatar name={msg.sender_name} size="sm" src={resolveAvatarUrl(msg.sender_avatar_url)} />}
                 <Flex direction="column" align={isMe ? 'flex-end' : 'flex-start'} maxW="70%">
                   <Box
                     bg={isMe ? 'blue.500' : 'gray.100'}

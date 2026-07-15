@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Flex, VStack, Heading, Text, Grid, GridItem, Avatar, Button, Loading } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete, resolveAvatarUrl } from '../lib/api';
 import { getCurrentPeriod } from '../lib/periods';
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
@@ -17,6 +17,7 @@ interface TimetableSlot {
 interface MatchCandidate {
   friend_id: number;
   username: string;
+  avatar_url: string | null;
   faculty: string;
   circle: string;
   status_level: string;
@@ -404,7 +405,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
                 transition="transform 0.15s"
                 _hover={{ transform: 'translateY(-2px)' }}
               >
-                <Avatar name={candidate.username} size="md" />
+                <Avatar name={candidate.username} size="md" src={resolveAvatarUrl(candidate.avatar_url)} />
                 <Box textAlign="center">
                   <Text fontSize="sm" fontWeight="bold" lineClamp={1}>{candidate.username}</Text>
                   <Flex align="center" justify="center" gap="xs" mt="xs">

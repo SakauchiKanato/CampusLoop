@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Box, Flex, VStack, Heading, Input, Button, Text, NativeSelect } from '@yamada-ui/react';
+import { useState, useRef } from 'react';
+import type { ChangeEvent } from 'react';
+import { Box, Flex, VStack, Heading, Input, Button, Text, NativeSelect, Avatar } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, apiPut } from '../lib/api';
+import { API_ENDPOINTS, apiPut, apiUpload, apiDelete, resolveAvatarUrl } from '../lib/api';
 import type { LoggedInUser } from '../App';
 
 const FACULTY_OPTIONS = [
@@ -56,6 +57,58 @@ export default function ProfileEdit({ user, onProfileUpdate }: ProfileEditProps)
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // 同じファイルを選び直しても onChange が発火するようにリセット
+    if (!file) return;
+
+    setAvatarError(null);
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await apiUpload<{ success: boolean; avatar_url?: string | null; message?: string }>(
+        API_ENDPOINTS.avatar,
+        formData
+      );
+      if (res.success) {
+        const newUrl = res.avatar_url ?? null;
+        setAvatarUrl(newUrl);
+        onProfileUpdate({ ...user, avatar_url: newUrl });
+      } else {
+        setAvatarError(res.message || '画像のアップロードに失敗しました。');
+      }
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'サーバーとの通信に失敗しました。');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!window.confirm('プロフィール画像を削除しますか？')) return;
+    setAvatarError(null);
+    setAvatarUploading(true);
+    try {
+      const res = await apiDelete<{ success: boolean; message?: string }>(API_ENDPOINTS.avatar, {});
+      if (res.success) {
+        setAvatarUrl(null);
+        onProfileUpdate({ ...user, avatar_url: null });
+      } else {
+        setAvatarError(res.message || '削除に失敗しました。');
+      }
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'サーバーとの通信に失敗しました。');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +171,48 @@ export default function ProfileEdit({ user, onProfileUpdate }: ProfileEditProps)
               <Text fontSize="sm">{successMsg}</Text>
             </Box>
           )}
+
+          <Box>
+            <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">プロフィール画像</Text>
+            <Flex align="center" gap="md">
+              <Avatar size="xl" name={user?.username || ''} src={resolveAvatarUrl(avatarUrl)} />
+              <VStack align="flex-start" gap="xs">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  colorScheme="blue"
+                  loading={avatarUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  画像を選択
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="red"
+                    disabled={avatarUploading}
+                    onClick={handleAvatarRemove}
+                  >
+                    画像を削除
+                  </Button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleAvatarSelect}
+                />
+              </VStack>
+            </Flex>
+            {avatarError && (
+              <Text fontSize="xs" color="red.500" mt="xs">{avatarError}</Text>
+            )}
+            <Text fontSize="xs" color="gray.400" mt="xs">JPEG / PNG / WEBP、3MB以内</Text>
+          </Box>
 
           <Box>
             <Text as="label" fontSize="sm" fontWeight="bold" mb="xs" display="block">ユーザー名</Text>

@@ -4,7 +4,7 @@ import {
   Input, Modal, Loading,
 } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, resolveAvatarUrl } from '../lib/api';
 import type { LoggedInUser } from '../App';
 
 interface Friend {
@@ -12,6 +12,7 @@ interface Friend {
   username: string;
   faculty: string;
   circle: string;
+  avatar_url: string | null;
 }
 
 interface SearchedUser {
@@ -19,6 +20,7 @@ interface SearchedUser {
   username: string;
   faculty: string;
   circle: string;
+  avatar_url: string | null;
 }
 
 export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; onLogout: () => void }) {
@@ -119,7 +121,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
       <Box bg="white" borderRadius="2xl" p="md" boxShadow="0 4px 16px rgba(99,102,241,0.10)">
         <Flex gap="md" align="center" justify="space-between">
           <Flex gap="md" align="center">
-            <Avatar size="lg" name={user?.username || ''} />
+            <Avatar size="lg" name={user?.username || ''} src={resolveAvatarUrl(user?.avatar_url)} />
             <Box>
               <Heading as="h3" size="sm" mb="xs">
                 {user?.username || ''}{' '}
@@ -171,7 +173,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
           <Wrap gap="md" mt="sm">
             {friends.map((friend) => (
               <VStack key={friend.friend_id} gap="xs" align="center">
-                <Avatar name={friend.username} size="md" />
+                <Avatar name={friend.username} size="md" src={resolveAvatarUrl(friend.avatar_url)} />
                 <Text fontSize="xs" lineClamp={1} w="50px" textAlign="center">{friend.username}</Text>
               </VStack>
             ))}
@@ -225,7 +227,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
                     borderColor="gray.200"
                   >
                     <Flex align="center" gap="sm">
-                      <Avatar name={u.username} size="sm" />
+                      <Avatar name={u.username} size="sm" src={resolveAvatarUrl(u.avatar_url)} />
                       <Box>
                         <Text fontSize="sm" fontWeight="bold">{u.username}</Text>
                         <Text fontSize="xs" color="gray.500">

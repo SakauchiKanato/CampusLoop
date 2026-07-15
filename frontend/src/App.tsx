@@ -13,6 +13,7 @@ export interface LoggedInUser {
   campus: string;
   faculty: string;
   circle: string;
+  avatar_url: string | null;
 }
 
 export interface UserStatus {
