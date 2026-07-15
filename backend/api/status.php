@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -16,20 +17,15 @@ if (!in_array($method, ['GET', 'POST'])) {
     exit;
 }
 
+// 自分のステータスしか読み書きできない
+$user_id = require_login();
+
 $pdo = get_db();
 
 // ==============================
 // GET: ステータス取得
 // ==============================
 if ($method === 'GET') {
-    $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
-    
-    if (!$user_id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
-        exit;
-    }
-    
     // 有効期限が未来のレコードのみ取得
     $stmt = $pdo->prepare(
         'SELECT level, comment, expires_at
@@ -69,16 +65,9 @@ if ($method === 'GET') {
 // ==============================
 $body = json_decode(file_get_contents('php://input'), true);
 
-$user_id = isset($body['user_id']) ? (int)$body['user_id'] : null;
 $level   = trim($body['level']     ?? 'busy');
 $comment = trim($body['comment']   ?? '');
 $hours   = isset($body['hours'])   ? (int)$body['hours']   : 1; // 有効時間（時間単位）
-
-if (!$user_id) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
-    exit;
-}
 
 if (!in_array($level, ['free', 'chat', 'busy'])) {
     $level = 'busy';

@@ -13,8 +13,12 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
+
+// フレンド関連はすべてログイン必須。「自分」は常にセッションのユーザーIDを使う。
+$user_id = require_login();
 
 // ─────────────── GET: フレンド一覧 or ユーザー検索 ───────────────
 if ($method === 'GET') {
@@ -22,7 +26,7 @@ if ($method === 'GET') {
     // ユーザー検索モード
     if (isset($_GET['search']) && isset($_GET['q'])) {
         $q = trim($_GET['q']);
-        $exclude_id = isset($_GET['exclude_id']) ? (int)$_GET['exclude_id'] : 0;
+        $exclude_id = $user_id; // 自分自身は検索結果から除外する（他人のIDは指定させない）
 
         if (strlen($q) < 1) {
             echo json_encode(['success' => true, 'users' => []]);
@@ -52,15 +56,7 @@ if ($method === 'GET') {
         exit;
     }
 
-    // フレンド一覧モード
-    $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
-
-    if (!$user_id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
-        exit;
-    }
-
+    // フレンド一覧モード（常に自分のフレンド一覧のみ）
     $pdo = get_db();
 
     $stmt = $pdo->prepare(
@@ -93,15 +89,9 @@ if ($method === 'GET') {
 if ($method === 'POST') {
     $body = json_decode(file_get_contents('php://input'), true);
 
-    $user_id         = isset($body['user_id']) ? (int)$body['user_id'] : null;
+    // 追加する側（user_id）は常にログイン中の本人
     $friend_id       = isset($body['friend_id']) ? (int)$body['friend_id'] : null;
     $friend_username = trim($body['friend_username'] ?? '');
-
-    if (!$user_id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
-        exit;
-    }
 
     $pdo = get_db();
 
