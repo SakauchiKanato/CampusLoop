@@ -20,6 +20,7 @@ interface MatchCandidate {
   faculty: string;
   circle: string;
   status_level: string;
+  status_location: string | null;
   status_comment: string | null;
   match_id: number | null;
   match_from_user: number | null;
@@ -372,6 +373,9 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
                     <Box w="8px" h="8px" borderRadius="full" bg={getStatusColor(candidate.status_level)} />
                     <Text fontSize="xs" color="gray.600">{getStatusLabel(candidate.status_level)}</Text>
                   </Flex>
+                  {candidate.status_location && (
+                    <Text fontSize="xs" color="violet.600" fontWeight="bold" mt="xs">📍 {candidate.status_location}</Text>
+                  )}
                   {candidate.status_comment && (
                     <Text fontSize="xs" color="gray.500" mt="xs" lineClamp={1}>「{candidate.status_comment}」</Text>
                   )}
