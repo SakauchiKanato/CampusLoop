@@ -8,6 +8,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -16,6 +17,9 @@ if (!in_array($method, ['GET', 'POST', 'PUT'])) {
     echo json_encode(['success' => false, 'message' => 'GET, POST または PUT メソッドのみ使用できます。']);
     exit;
 }
+
+// マッチ関連はすべてログイン必須。「自分」は常にセッションのユーザーIDを使う。
+$session_user_id = require_login();
 
 $pdo = get_db();
 
@@ -27,14 +31,6 @@ $pdo->exec('DELETE FROM matches WHERE created_at < CURRENT_DATE');
 // GET (pending=1): 自分宛の未応答の誘い一覧（通知バッジ用）
 // ==============================
 if ($method === 'GET' && isset($_GET['pending'])) {
-    $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : null;
-
-    if (!$user_id) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
-        exit;
-    }
-
     $stmt = $pdo->prepare(
         'SELECT m.id AS match_id, m.period, m.from_user, u.username AS from_username
          FROM matches m
@@ -42,7 +38,7 @@ if ($method === 'GET' && isset($_GET['pending'])) {
          WHERE m.to_user = :uid AND m.status = \'pending\' AND m.created_at >= CURRENT_DATE
          ORDER BY m.period ASC'
     );
-    $stmt->execute([':uid' => $user_id]);
+    $stmt->execute([':uid' => $session_user_id]);
     $invites = $stmt->fetchAll();
 
     foreach ($invites as &$inv) {
@@ -59,15 +55,16 @@ if ($method === 'GET' && isset($_GET['pending'])) {
 // GET: 特定時限の空きコママッチ候補一覧
 // ==============================
 if ($method === 'GET') {
-    $user_id     = isset($_GET['user_id'])     ? (int)$_GET['user_id']     : null;
     $day_of_week = isset($_GET['day_of_week']) ? (int)$_GET['day_of_week'] : null;
     $period      = isset($_GET['period'])      ? (int)$_GET['period']      : null;
 
-    if (!$user_id || !$day_of_week || !$period) {
+    if (!$day_of_week || !$period) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'user_id, day_of_week, period は必須です。']);
+        echo json_encode(['success' => false, 'message' => 'day_of_week, period は必須です。']);
         exit;
     }
+
+    $user_id = $session_user_id;
 
     // 1. 自分と友達であり、かつ指定コマが空きコマ（is_free = true）になっているユーザーを取得
     // 2. さらに、有効期限内のステータスを結合
@@ -131,14 +128,20 @@ if ($method === 'GET') {
 // ==============================
 if ($method === 'POST') {
     $body = json_decode(file_get_contents('php://input'), true);
-    
-    $from_user = isset($body['from_user']) ? (int)$body['from_user'] : null;
+
+    // 誘う側（from_user）は常にログイン中の本人
+    $from_user = $session_user_id;
     $to_user   = isset($body['to_user'])   ? (int)$body['to_user']   : null;
     $period    = isset($body['period'])    ? (int)$body['period']    : null;
-    
-    if (!$from_user || !$to_user || !$period) {
+
+    if (!$to_user || !$period) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'from_user, to_user, period は必須です。']);
+        echo json_encode(['success' => false, 'message' => 'to_user, period は必須です。']);
+        exit;
+    }
+    if ($from_user === $to_user) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => '自分自身を誘うことはできません。']);
         exit;
     }
     
@@ -189,16 +192,32 @@ if ($method === 'POST') {
 // ==============================
 if ($method === 'PUT') {
     $body = json_decode(file_get_contents('php://input'), true);
-    
+
     $match_id = isset($body['match_id']) ? (int)$body['match_id'] : null;
     $status   = trim($body['status']     ?? ''); // 'accepted' または 'rejected'
-    
+
     if (!$match_id || !in_array($status, ['accepted', 'rejected'])) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'match_id と有効な status (accepted/rejected) は必須です。']);
         exit;
     }
-    
+
+    // 誘いに応答できるのは、誘われた本人（to_user）だけ
+    $stmt = $pdo->prepare('SELECT to_user FROM matches WHERE id = :match_id');
+    $stmt->execute([':match_id' => $match_id]);
+    $match = $stmt->fetch();
+
+    if (!$match) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'マッチが見つかりません。']);
+        exit;
+    }
+    if ((int)$match['to_user'] !== $session_user_id) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'この誘いに応答できるのは相手本人だけです。']);
+        exit;
+    }
+
     $stmt = $pdo->prepare('UPDATE matches SET status = :status WHERE id = :match_id');
     $stmt->execute([':status' => $status, ':match_id' => $match_id]);
 

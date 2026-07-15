@@ -10,6 +10,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -18,6 +19,9 @@ if (!in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {
     echo json_encode(['success' => false, 'message' => 'GET, POST, PUT, DELETE メソッドのみ使用できます。']);
     exit;
 }
+
+// イベント機能は学内限定なのでログイン必須。「自分」は常にセッションのユーザーIDを使う。
+$session_user_id = require_login();
 
 $pdo = get_db();
 
@@ -49,7 +53,7 @@ $pdo->exec('DELETE FROM events WHERE event_date < CURRENT_DATE');
 // GET: イベント一覧（今日以降）
 // ==============================
 if ($method === 'GET') {
-    $user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
+    $user_id = $session_user_id;
 
     $stmt = $pdo->prepare(
         'SELECT
@@ -84,7 +88,8 @@ $body = json_decode(file_get_contents('php://input'), true);
 // POST: イベント作成
 // ==============================
 if ($method === 'POST') {
-    $creator_id  = isset($body['creator_id']) ? (int)$body['creator_id'] : null;
+    // 作成者は常にログイン中の本人
+    $creator_id  = $session_user_id;
     $title       = trim($body['title']        ?? '');
     $description = trim($body['description']  ?? '');
     $event_date  = trim($body['event_date']   ?? '');
@@ -92,9 +97,9 @@ if ($method === 'POST') {
     $location    = trim($body['location']     ?? '');
     $campus      = trim($body['campus']       ?? '有明キャンパス');
 
-    if (!$creator_id || $title === '' || $event_date === '' || !$period) {
+    if ($title === '' || $event_date === '' || !$period) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'creator_id・タイトル・開催日・時限は必須です。']);
+        echo json_encode(['success' => false, 'message' => 'タイトル・開催日・時限は必須です。']);
         exit;
     }
     if (mb_strlen($title) > 100) {
@@ -143,11 +148,11 @@ if ($method === 'POST') {
 // ==============================
 if ($method === 'PUT') {
     $event_id = isset($body['event_id']) ? (int)$body['event_id'] : null;
-    $user_id  = isset($body['user_id'])  ? (int)$body['user_id']  : null;
+    $user_id  = $session_user_id; // 参加/取り消しは常にログイン中の本人
 
-    if (!$event_id || !$user_id) {
+    if (!$event_id) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'event_id と user_id は必須です。']);
+        echo json_encode(['success' => false, 'message' => 'event_id は必須です。']);
         exit;
     }
 
@@ -182,11 +187,11 @@ if ($method === 'PUT') {
 // ==============================
 if ($method === 'DELETE') {
     $event_id = isset($body['event_id']) ? (int)$body['event_id'] : null;
-    $user_id  = isset($body['user_id'])  ? (int)$body['user_id']  : null;
+    $user_id  = $session_user_id; // 削除者は常にログイン中の本人（作成者チェックは下で行う）
 
-    if (!$event_id || !$user_id) {
+    if (!$event_id) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'event_id と user_id は必須です。']);
+        echo json_encode(['success' => false, 'message' => 'event_id は必須です。']);
         exit;
     }
 

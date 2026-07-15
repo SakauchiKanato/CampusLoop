@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -16,20 +17,47 @@ if (!in_array($method, ['GET', 'POST'])) {
     exit;
 }
 
+// チャットの閲覧・送信はすべてログイン必須
+$session_user_id = require_login();
+
 $pdo = get_db();
+
+/**
+ * 指定した match_id の当事者（from_user / to_user のどちらか）に
+ * ログイン中の本人が含まれているかを確認する。
+ * 含まれていなければ 404/403 を返してスクリプトを終了する。
+ */
+function assert_match_participant(PDO $pdo, int $match_id, int $session_user_id): void {
+    $stmt = $pdo->prepare('SELECT from_user, to_user FROM matches WHERE id = :match_id');
+    $stmt->execute([':match_id' => $match_id]);
+    $match = $stmt->fetch();
+
+    if (!$match) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'マッチが見つかりません。']);
+        exit;
+    }
+    if ((int)$match['from_user'] !== $session_user_id && (int)$match['to_user'] !== $session_user_id) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'このやりとりを閲覧する権限がありません。']);
+        exit;
+    }
+}
 
 // ==============================
 // GET: メッセージ履歴の取得
 // ==============================
 if ($method === 'GET') {
     $match_id = isset($_GET['match_id']) ? (int)$_GET['match_id'] : null;
-    
+
     if (!$match_id) {
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'match_id は必須です。']);
         exit;
     }
-    
+
+    assert_match_participant($pdo, $match_id, $session_user_id);
+
     // マッチの基本情報（誰と誰のやり取りか）とメッセージ履歴を取得
     $stmt = $pdo->prepare(
         'SELECT 
@@ -84,18 +112,21 @@ if ($method === 'GET') {
 $body = json_decode(file_get_contents('php://input'), true);
 
 $match_id  = isset($body['match_id'])  ? (int)$body['match_id']  : null;
-$sender_id = isset($body['sender_id']) ? (int)$body['sender_id'] : null;
 $content   = trim($body['content']     ?? '');
 
-if (!$match_id || !$sender_id || empty($content)) {
+if (!$match_id || empty($content)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'match_id, sender_id, content は必須です。']);
+    echo json_encode(['success' => false, 'message' => 'match_id, content は必須です。']);
     exit;
 }
 
+// 送信者は常にログイン中の本人。かつ、そのマッチの当事者であることを確認する。
+$sender_id = $session_user_id;
+assert_match_participant($pdo, $match_id, $session_user_id);
+
 $stmt = $pdo->prepare(
-    'INSERT INTO messages (match_id, sender_id, content) 
-     VALUES (:match_id, :sender_id, :content) 
+    'INSERT INTO messages (match_id, sender_id, content)
+     VALUES (:match_id, :sender_id, :content)
      RETURNING id, created_at'
 );
 $stmt->execute([
