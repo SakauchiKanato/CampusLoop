@@ -18,6 +18,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     http_response_code(405);
@@ -25,18 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     exit;
 }
 
+// 更新対象は必ずログイン中の本人。リクエストの user_id は信用しない（他人になりすまし防止）。
+$user_id = require_login();
+
 $body = json_decode(file_get_contents('php://input'), true);
 
-$user_id = isset($body['user_id']) ? (int)$body['user_id'] : null;
 $faculty = trim($body['faculty'] ?? '');
 $circle  = trim($body['circle'] ?? '');
 $campus  = trim($body['campus'] ?? '');
-
-if (!$user_id) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'user_id は必須です。']);
-    exit;
-}
 
 $pdo = get_db();
 
