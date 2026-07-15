@@ -5,7 +5,7 @@ import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'r
 import { Box, Flex, Text } from '@yamada-ui/react';
 import { Settings, Home as HomeIcon, Users, User } from 'lucide-react';
 
-import { API_ENDPOINTS, apiGet } from './lib/api';
+import { API_ENDPOINTS, apiGet, apiPost } from './lib/api';
 
 export interface LoggedInUser {
   id: number;
@@ -254,6 +254,26 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // 起動時にサーバー側のセッションが本当に有効か確認する。
+  // localStorage はあくまでUI表示用のキャッシュで、認証の実体はサーバーの
+  // セッションCookie側にあるため、Cookieが切れている/無効な場合はログイン画面へ戻す。
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet<{ success: boolean; user?: LoggedInUser }>(API_ENDPOINTS.me);
+        if (res.success && res.user) {
+          setUser(res.user);
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(res.user)); } catch { /* 保存失敗時は無視 */ }
+        } else {
+          setUser(null);
+          try { localStorage.removeItem(STORAGE_KEY); } catch { /* 無視 */ }
+        }
+      } catch {
+        // サーバーに接続できない場合は、いったんキャッシュのログイン状態のままにしておく
+      }
+    })();
+  }, []);
+
   const handleLogin = (loggedInUser: LoggedInUser) => {
     setUser(loggedInUser);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedInUser)); } catch { /* 保存失敗時は無視 */ }
@@ -266,6 +286,8 @@ function App() {
 
   const handleLogout = () => {
     if (window.confirm('ログアウトしますか？')) {
+      // サーバー側のセッションも破棄する（失敗しても画面上はログアウト扱いにする）
+      apiPost(API_ENDPOINTS.logout, {}).catch(() => { /* 無視 */ });
       setUser(null);
       try { localStorage.removeItem(STORAGE_KEY); } catch { /* 無視 */ }
       setUserStatus({

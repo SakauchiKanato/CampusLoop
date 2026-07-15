@@ -13,6 +13,8 @@ export const API_BASE = isProd
 export const API_ENDPOINTS = {
   register:  `${API_BASE}/register.php`,
   login:     `${API_BASE}/login.php`,
+  logout:    `${API_BASE}/logout.php`,
+  me:        `${API_BASE}/me.php`,
   timetable: `${API_BASE}/timetable.php`,
   status:    `${API_BASE}/status.php`,
   matches:   `${API_BASE}/matches.php`,
@@ -34,7 +36,8 @@ const CONNECTION_ERROR_MESSAGE = isProd
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, init);
+    // ログインセッションのCookieを送受信するために必須
+    res = await fetch(url, { credentials: 'include', ...init });
   } catch {
     // ネットワークエラー（接続拒否・オフラインなど）
     throw new Error(CONNECTION_ERROR_MESSAGE);
