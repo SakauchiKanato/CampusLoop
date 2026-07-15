@@ -4,7 +4,7 @@ import {
   Input, Modal, Loading,
 } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, apiGet, apiPost, resolveAvatarUrl } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiDelete, resolveAvatarUrl } from '../lib/api';
 import type { LoggedInUser } from '../App';
 
 interface Friend {
@@ -35,6 +35,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
   const [isSearching, setIsSearching] = useState(false);
   const [addMessage, setAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
   const fetchFriends = async () => {
     setLoadingFriends(true);
@@ -99,6 +100,25 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
       setAddMessage({ type: 'error', text: 'サーバーとの通信に失敗しました。' });
     } finally {
       setAddingId(null);
+    }
+  };
+
+  const handleUnfriend = async (friend: Friend) => {
+    if (!window.confirm(`${friend.username}さんをフレンドから解除しますか？`)) return;
+    setRemovingId(friend.friend_id);
+    try {
+      const res = await apiDelete<{ success: boolean; message?: string }>(API_ENDPOINTS.friends, {
+        friend_id: friend.friend_id,
+      });
+      if (res.success) {
+        fetchFriends();
+      } else {
+        alert(res.message || 'フレンドの解除に失敗しました。');
+      }
+    } catch {
+      alert('サーバーとの通信に失敗しました。');
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -175,9 +195,24 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
         ) : (
           <Wrap gap="md" mt="sm">
             {friends.map((friend) => (
-              <VStack key={friend.friend_id} gap="xs" align="center">
+              <VStack key={friend.friend_id} gap="2xs" align="center" w="60px">
                 <Avatar name={friend.username} size="md" src={resolveAvatarUrl(friend.avatar_url)} />
-                <Text fontSize="xs" lineClamp={1} w="50px" textAlign="center">{friend.username}</Text>
+                <Text fontSize="xs" lineClamp={1} w="60px" textAlign="center">{friend.username}</Text>
+                <Text
+                  as="button"
+                  type="button"
+                  fontSize="2xs"
+                  color="red.400"
+                  cursor="pointer"
+                  bg="none"
+                  border="none"
+                  p="0"
+                  opacity={removingId === friend.friend_id ? 0.5 : 1}
+                  disabled={removingId === friend.friend_id}
+                  onClick={() => handleUnfriend(friend)}
+                >
+                  解除
+                </Text>
               </VStack>
             ))}
           </Wrap>

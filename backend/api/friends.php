@@ -1,14 +1,18 @@
 <?php
 /**
  * フレンド API
- * GET  /api/friends.php?user_id=1           → フレンド一覧
- * POST /api/friends.php                     → フレンド追加
- * GET  /api/friends.php?search=1&q=keyword  → ユーザー検索
+ * GET    /api/friends.php?user_id=1           → フレンド一覧
+ * POST   /api/friends.php                     → フレンド追加
+ * GET    /api/friends.php?search=1&q=keyword  → ユーザー検索
+ * DELETE /api/friends.php                     → フレンド解除
  *
  * POST リクエストボディ (JSON):
  * { "user_id": 1, "friend_id": 2 }
  * または
  * { "user_id": 1, "friend_username": "campus_taro" }
+ *
+ * DELETE リクエストボディ (JSON):
+ * { "friend_id": 2 }
  */
 
 require_once __DIR__ . '/../config/cors.php';
@@ -162,5 +166,36 @@ if ($method === 'POST') {
     exit;
 }
 
+// ─────────────── DELETE: フレンド解除 ───────────────
+if ($method === 'DELETE') {
+    $body = json_decode(file_get_contents('php://input'), true);
+
+    $friend_id = isset($body['friend_id']) ? (int)$body['friend_id'] : null;
+
+    if (!$friend_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'friend_id は必須です。']);
+        exit;
+    }
+
+    $pdo = get_db();
+
+    // 双方向の friendships レコードをまとめて削除する
+    $stmt = $pdo->prepare(
+        'DELETE FROM friendships
+         WHERE (user_id = :uid AND friend_id = :fid)
+            OR (user_id = :fid2 AND friend_id = :uid2)'
+    );
+    $stmt->execute([
+        ':uid'  => $user_id,
+        ':fid'  => $friend_id,
+        ':fid2' => $friend_id,
+        ':uid2' => $user_id,
+    ]);
+
+    echo json_encode(['success' => true, 'message' => 'フレンドを解除しました。']);
+    exit;
+}
+
 http_response_code(405);
-echo json_encode(['success' => false, 'message' => 'GET または POST メソッドのみ使用できます。']);
+echo json_encode(['success' => false, 'message' => 'GET, POST または DELETE メソッドのみ使用できます。']);
