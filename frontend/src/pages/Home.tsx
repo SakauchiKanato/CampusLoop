@@ -73,6 +73,9 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [events, setEvents] = useState<CampusEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  // 登録直後など、時間割を1件も登録していないユーザーに登録を促すバナー用。
+  // null = まだ確認中（誤ってバナーを出さないようにする）
+  const [hasAnyTimetable, setHasAnyTimetable] = useState<boolean | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -260,8 +263,43 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // 時間割が1件も登録されていない（=登録直後などまだ手を付けていない）ユーザーを検出する。
+  // fetchTimetable は土日だとAPIを呼ばず終了してしまうため、曜日に関係なく
+  // 別途1回だけ全曜日分の時間割を取得して判定する。
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await apiGet<{ success: boolean; timetable?: unknown[] }>(
+          `${API_ENDPOINTS.timetable}?user_id=${user.id}`
+        );
+        setHasAnyTimetable(res.success ? (res.timetable?.length ?? 0) > 0 : true);
+      } catch {
+        // 通信エラー時は誤ってバナーを出さないよう true 扱いにしておく
+        setHasAnyTimetable(true);
+      }
+    })();
+  }, [user]);
+
   return (
     <VStack gap="lg" align="stretch">
+      {/* 登録直後など、時間割が1件も無いユーザーへの案内バナー */}
+      {hasAnyTimetable === false && (
+        <Box bg="violet.50" border="1px solid" borderColor="violet.200" borderRadius="2xl" p="md">
+          <Flex align="center" justify="space-between" gap="md" wrap="wrap">
+            <Box>
+              <Text fontWeight="bold" color="violet.700">📅 まずは時間割を登録しましょう！</Text>
+              <Text fontSize="xs" color="violet.600" mt="xs">
+                時間割を登録すると空きコマが自動でわかるようになり、フレンドとのマッチングも始まります。
+              </Text>
+            </Box>
+            <Button colorScheme="violet" borderRadius="full" onClick={() => navigate('/timetable/edit')} flexShrink={0}>
+              時間割を登録する
+            </Button>
+          </Flex>
+        </Box>
+      )}
+
       {/* 時間割セクション */}
       <Box bg="white" p="md" borderRadius="2xl" boxShadow="0 4px 20px rgba(99,102,241,0.10)">
         <Flex justify="space-between" align="center" mb="md">
