@@ -60,10 +60,11 @@ if ($method === 'GET') {
 
     // マッチの基本情報（誰と誰のやり取りか）とメッセージ履歴を取得
     $stmt = $pdo->prepare(
-        'SELECT 
+        'SELECT
             m.id as message_id,
             m.sender_id,
             u.username as sender_name,
+            u.avatar_url as sender_avatar_url,
             m.content,
             m.created_at
          FROM messages m

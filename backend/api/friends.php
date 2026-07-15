@@ -35,7 +35,7 @@ if ($method === 'GET') {
 
         $pdo = get_db();
         $stmt = $pdo->prepare(
-            'SELECT id, username, faculty, circle, campus
+            'SELECT id, username, faculty, circle, campus, avatar_url
              FROM users
              WHERE (username ILIKE :q OR CAST(id AS TEXT) = :exact_id)
                AND id != :exclude_id

@@ -1,0 +1,5 @@
+# アップロード画像置き場。万一ここに実行可能なファイルが紛れ込んでも
+# 実行されないようにする（Apacheデプロイ時の保険。PHP内蔵サーバーには効果なし）。
+<FilesMatch "\.ph(p[3-9]?|t|tml)$">
+    Require all denied
+</FilesMatch>

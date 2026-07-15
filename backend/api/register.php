@@ -123,11 +123,12 @@ http_response_code(201);
 echo json_encode([
     'success' => true,
     'user'    => [
-        'id'       => (int)$new_user['id'],
-        'username' => $username,
-        'email'    => strtolower($email),
-        'campus'   => $campus,
-        'faculty'  => $faculty,
-        'circle'   => $circle,
+        'id'         => (int)$new_user['id'],
+        'username'   => $username,
+        'email'      => strtolower($email),
+        'campus'     => $campus,
+        'faculty'    => $faculty,
+        'circle'     => $circle,
+        'avatar_url' => null,
     ]
 ]);

@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $user_id = require_login();
 
 $pdo = get_db();
-$stmt = $pdo->prepare('SELECT id, username, campus, faculty, circle FROM users WHERE id = :id');
+$stmt = $pdo->prepare('SELECT id, username, campus, faculty, circle, avatar_url FROM users WHERE id = :id');
 $stmt->execute([':id' => $user_id]);
 $user = $stmt->fetch();
 
@@ -36,10 +36,11 @@ if (!$user) {
 echo json_encode([
     'success' => true,
     'user'    => [
-        'id'       => (int)$user['id'],
-        'username' => $user['username'],
-        'campus'   => $user['campus'],
-        'faculty'  => $user['faculty'],
-        'circle'   => $user['circle'],
+        'id'         => (int)$user['id'],
+        'username'   => $user['username'],
+        'campus'     => $user['campus'],
+        'faculty'    => $user['faculty'],
+        'circle'     => $user['circle'],
+        'avatar_url' => $user['avatar_url'],
     ]
 ]);

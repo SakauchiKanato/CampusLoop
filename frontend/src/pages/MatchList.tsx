@@ -3,7 +3,7 @@ import { Box, Flex, VStack, Heading, Text, Avatar, Button, IconButton, Loading }
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut, resolveAvatarUrl } from '../lib/api';
 import { getCurrentPeriod } from '../lib/periods';
 
 const PERIOD_TIMES: Record<number, string> = {
@@ -17,6 +17,7 @@ const PERIOD_TIMES: Record<number, string> = {
 interface MatchCandidate {
   friend_id: number;
   username: string;
+  avatar_url: string | null;
   faculty: string;
   circle: string;
   status_level: string;
@@ -32,6 +33,7 @@ interface PendingInvite {
   period: number;
   from_user: number;
   from_username: string;
+  from_avatar_url: string | null;
 }
 
 const GROUP_DEFS = [
@@ -160,7 +162,7 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
             {invites.map((inv) => (
               <Flex key={inv.match_id} align="center" justify="space-between" gap="sm">
                 <Flex align="center" gap="sm" flex="1">
-                  <Avatar name={inv.from_username} size="sm" />
+                  <Avatar name={inv.from_username} size="sm" src={resolveAvatarUrl(inv.from_avatar_url)} />
                   <Text fontSize="sm">
                     <Text as="span" fontWeight="bold">{inv.from_username}</Text>
                     さんから <Text as="span" fontWeight="bold" color="violet.600">{inv.period}限</Text> に誘われています
@@ -243,7 +245,7 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
                     {members.map((candidate) => (
                       <Flex key={candidate.friend_id} justify="space-between" align="flex-start" gap="md">
                         <Flex gap="md" flex="1">
-                          <Avatar name={candidate.username} size="md" />
+                          <Avatar name={candidate.username} size="md" src={resolveAvatarUrl(candidate.avatar_url)} />
                           <Box>
                             <Flex align="baseline" gap="sm" mb="xs">
                               <Text fontWeight="bold">{candidate.username}</Text>

@@ -37,7 +37,7 @@ if (empty($username) || empty($password)) {
 $pdo = get_db();
 
 // ユーザーをDBから取得
-$stmt = $pdo->prepare('SELECT id, username, password_hash, campus, faculty, circle FROM users WHERE username = :username');
+$stmt = $pdo->prepare('SELECT id, username, password_hash, campus, faculty, circle, avatar_url FROM users WHERE username = :username');
 $stmt->execute([':username' => $username]);
 $user = $stmt->fetch();
 
@@ -57,10 +57,11 @@ http_response_code(200);
 echo json_encode([
     'success' => true,
     'user'    => [
-        'id'       => (int)$user['id'],
-        'username' => $user['username'],
-        'campus'   => $user['campus'],
-        'faculty'  => $user['faculty'],
-        'circle'   => $user['circle'],
+        'id'         => (int)$user['id'],
+        'username'   => $user['username'],
+        'campus'     => $user['campus'],
+        'faculty'    => $user['faculty'],
+        'circle'     => $user['circle'],
+        'avatar_url' => $user['avatar_url'],
     ]
 ]);
