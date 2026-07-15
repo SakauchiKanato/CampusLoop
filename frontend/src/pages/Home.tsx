@@ -74,6 +74,9 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [events, setEvents] = useState<CampusEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  // イベントのキャンパス絞り込み。デフォルトは自分のキャンパスのみ表示し、
+  // 「すべて」を選べば他キャンパスのイベントも見られるようにする。
+  const [eventCampusFilter, setEventCampusFilter] = useState<'mine' | 'all'>('mine');
   // 登録直後など、時間割を1件も登録していないユーザーに登録を促すバナー用。
   // null = まだ確認中（誤ってバナーを出さないようにする）
   const [hasAnyTimetable, setHasAnyTimetable] = useState<boolean | null>(null);
@@ -157,6 +160,12 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
     const slot = timetable.find((t) => t.period === ev.period);
     return !!slot?.is_free;
   };
+
+  // キャンパス絞り込み後のイベント一覧（「自分のキャンパス」選択時は自分と同じキャンパスのみ）
+  const visibleEvents =
+    eventCampusFilter === 'mine' && user?.campus
+      ? events.filter((ev) => ev.campus === user.campus)
+      : events;
 
   const fetchTimetable = async () => {
     setLoadingTimetable(true);
@@ -478,7 +487,7 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
 
       {/* 学内イベントセクション（全ユーザーに公開） */}
       <Box>
-        <Flex justify="space-between" align="center" mb="md">
+        <Flex justify="space-between" align="center" mb="sm">
           <Heading as="h2" size="md" display="flex" alignItems="center" gap="xs">
             🎪 学内イベント
           </Heading>
@@ -487,9 +496,31 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
           </Button>
         </Flex>
 
+        {/* キャンパス絞り込み */}
+        <Flex gap="xs" mb="md">
+          <Button
+            size="xs"
+            borderRadius="full"
+            variant={eventCampusFilter === 'mine' ? 'solid' : 'outline'}
+            colorScheme={eventCampusFilter === 'mine' ? 'violet' : 'gray'}
+            onClick={() => setEventCampusFilter('mine')}
+          >
+            {user?.campus || '自分のキャンパス'}
+          </Button>
+          <Button
+            size="xs"
+            borderRadius="full"
+            variant={eventCampusFilter === 'all' ? 'solid' : 'outline'}
+            colorScheme={eventCampusFilter === 'all' ? 'violet' : 'gray'}
+            onClick={() => setEventCampusFilter('all')}
+          >
+            すべてのキャンパス
+          </Button>
+        </Flex>
+
         {loadingEvents ? (
           <Flex justify="center" py="lg"><Loading.Dots fontSize="2xl" color="violet.500" /></Flex>
-        ) : events.length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <Box
             bg="white"
             p="lg"
@@ -498,12 +529,21 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
             textAlign="center"
             color="gray.400"
           >
-            <Text fontSize="sm">まだイベントがありません</Text>
-            <Text fontSize="xs" mt="xs">「＋ イベントを作る」から最初のイベントを立ててみよう！</Text>
+            {events.length === 0 ? (
+              <>
+                <Text fontSize="sm">まだイベントがありません</Text>
+                <Text fontSize="xs" mt="xs">「＋ イベントを作る」から最初のイベントを立ててみよう！</Text>
+              </>
+            ) : (
+              <>
+                <Text fontSize="sm">{user?.campus || 'このキャンパス'}のイベントはまだありません</Text>
+                <Text fontSize="xs" mt="xs">「すべてのキャンパス」を選ぶと他キャンパスのイベントも見られます</Text>
+              </>
+            )}
           </Box>
         ) : (
           <VStack gap="md" align="stretch">
-            {events.map((ev) => (
+            {visibleEvents.map((ev) => (
               <Box
                 key={ev.id}
                 bg="white"
