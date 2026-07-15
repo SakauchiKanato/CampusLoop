@@ -256,6 +256,23 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
     }
   };
 
+  // 自分が送った誘い（未応答）の取り消し
+  const handleCancelInvite = async (matchId: number) => {
+    if (!window.confirm('この誘いを取り消しますか？')) return;
+    try {
+      const res = await apiDelete<{ success: boolean; message?: string }>(API_ENDPOINTS.matches, {
+        match_id: matchId,
+      });
+      if (res.success) {
+        if (matchPeriod) fetchMatches(matchPeriod);
+      } else {
+        alert(res.message || '取り消しに失敗しました。');
+      }
+    } catch {
+      alert('取り消しに失敗しました。');
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 再取得時のローディング表示に必要
@@ -441,8 +458,16 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
                     不成立
                   </Button>
                 ) : (
-                  <Button size="sm" colorScheme="gray" w="full" mt="auto" disabled>
-                    誘い済み
+                  // pending かつ自分が送った誘い → 取り消せるようにする
+                  <Button
+                    size="sm"
+                    colorScheme="gray"
+                    variant="outline"
+                    w="full"
+                    mt="auto"
+                    onClick={() => handleCancelInvite(candidate.match_id!)}
+                  >
+                    誘いを取り消す
                   </Button>
                 )}
               </Box>
