@@ -3,7 +3,7 @@ import { Box, Flex, VStack, Heading, Text, Avatar, Button, IconButton, Loading }
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { LoggedInUser } from '../App';
-import { API_ENDPOINTS, apiGet, apiPost, apiPut, resolveAvatarUrl } from '../lib/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete, resolveAvatarUrl } from '../lib/api';
 import { getCurrentPeriod } from '../lib/periods';
 
 const PERIOD_TIMES: Record<number, string> = {
@@ -130,6 +130,23 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
       }
     } catch {
       alert('返答の送信に失敗しました。');
+    }
+  };
+
+  // 自分が送った誘い（未応答）の取り消し
+  const handleCancelInvite = async (matchId: number) => {
+    if (!window.confirm('この誘いを取り消しますか？')) return;
+    try {
+      const res = await apiDelete<{ success: boolean; message?: string }>(API_ENDPOINTS.matches, {
+        match_id: matchId,
+      });
+      if (res.success) {
+        fetchCandidates(period);
+      } else {
+        alert(res.message || '取り消しに失敗しました。');
+      }
+    } catch {
+      alert('取り消しに失敗しました。');
     }
   };
 
@@ -281,8 +298,14 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
                                 不成立
                               </Button>
                             ) : (
-                              <Button size="sm" colorScheme="gray" variant="outline" disabled>
-                                誘い済み
+                              // pending かつ自分が送った誘い → 取り消せるようにする
+                              <Button
+                                size="sm"
+                                colorScheme="gray"
+                                variant="outline"
+                                onClick={() => handleCancelInvite(candidate.match_id!)}
+                              >
+                                取り消す
                               </Button>
                             )
                           ) : (

@@ -1,9 +1,10 @@
 <?php
 /**
  * マッチング API
- * GET /api/matches.php?user_id=1&day_of_week=1&period=3
- * POST /api/matches.php (新規誘い出し作成)
- * PUT /api/matches.php (ステータス変更: 承諾/拒否)
+ * GET    /api/matches.php?user_id=1&day_of_week=1&period=3
+ * POST   /api/matches.php (新規誘い出し作成)
+ * PUT    /api/matches.php (ステータス変更: 承諾/拒否)
+ * DELETE /api/matches.php (自分が送った誘いの取り消し。pending中のみ)
  */
 
 require_once __DIR__ . '/../config/cors.php';
@@ -12,9 +13,9 @@ require_once __DIR__ . '/../config/auth.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-if (!in_array($method, ['GET', 'POST', 'PUT'])) {
+if (!in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'GET, POST または PUT メソッドのみ使用できます。']);
+    echo json_encode(['success' => false, 'message' => 'GET, POST, PUT または DELETE メソッドのみ使用できます。']);
     exit;
 }
 
@@ -229,5 +230,48 @@ if ($method === 'PUT') {
         'success' => true,
         'message' => 'ステータスを更新しました。'
     ]);
+    exit;
+}
+
+// ==============================
+// DELETE: 自分が送った誘いの取り消し
+// ==============================
+if ($method === 'DELETE') {
+    $body = json_decode(file_get_contents('php://input'), true);
+
+    $match_id = isset($body['match_id']) ? (int)$body['match_id'] : null;
+
+    if (!$match_id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'match_id は必須です。']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare('SELECT from_user, status FROM matches WHERE id = :match_id');
+    $stmt->execute([':match_id' => $match_id]);
+    $match = $stmt->fetch();
+
+    if (!$match) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'マッチが見つかりません。']);
+        exit;
+    }
+    // 取り消せるのは、自分が送った誘いだけ
+    if ((int)$match['from_user'] !== $session_user_id) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => '自分が送った誘いだけ取り消せます。']);
+        exit;
+    }
+    // すでに相手が応答済みの誘いは取り消せない（承諾済みならチャットが始まっている）
+    if ($match['status'] !== 'pending') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'すでに応答された誘いは取り消せません。']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare('DELETE FROM matches WHERE id = :match_id');
+    $stmt->execute([':match_id' => $match_id]);
+
+    echo json_encode(['success' => true, 'message' => '誘いを取り消しました。']);
     exit;
 }
