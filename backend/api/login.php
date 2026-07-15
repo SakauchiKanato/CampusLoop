@@ -16,6 +16,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -46,6 +47,11 @@ if (!$user || !password_verify($password, $user['password_hash'])) {
     echo json_encode(['success' => false, 'message' => 'ユーザー名またはパスワードが正しくありません。']);
     exit;
 }
+
+// ログイン成功: セッションにユーザーIDを保存する（以降のAPIはここだけを信用する）
+// セッション固定化攻撃を防ぐため、ログインの度にセッションIDを再生成する
+session_regenerate_id(true);
+$_SESSION['user_id'] = (int)$user['id'];
 
 http_response_code(200);
 echo json_encode([

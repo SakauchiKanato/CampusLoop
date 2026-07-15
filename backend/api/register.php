@@ -20,6 +20,7 @@
 
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/auth.php';
 
 // POST メソッドのみ受け付ける
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -113,6 +114,10 @@ $stmt->execute([
 ]);
 
 $new_user = $stmt->fetch();
+
+// 登録成功時点でそのままログイン状態にする（フロントは登録直後にホーム画面へ遷移するため）
+session_regenerate_id(true);
+$_SESSION['user_id'] = (int)$new_user['id'];
 
 http_response_code(201);
 echo json_encode([
