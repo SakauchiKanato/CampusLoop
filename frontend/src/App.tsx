@@ -17,6 +17,7 @@ export interface LoggedInUser {
 
 export interface UserStatus {
   level: 'free' | 'chat' | 'busy';
+  location: string;
   comment: string;
   expires_at: string;
   is_active: boolean;
@@ -227,6 +228,7 @@ function App() {
   const [user, setUser] = useState<LoggedInUser | null>(loadSavedUser);
   const [userStatus, setUserStatus] = useState<UserStatus>({
     level: 'busy',
+    location: '',
     comment: '',
     expires_at: '',
     is_active: false
@@ -292,6 +294,7 @@ function App() {
       try { localStorage.removeItem(STORAGE_KEY); } catch { /* 無視 */ }
       setUserStatus({
         level: 'busy',
+        location: '',
         comment: '',
         expires_at: '',
         is_active: false

@@ -20,6 +20,7 @@ interface MatchCandidate {
   faculty: string;
   circle: string;
   status_level: string;
+  status_location: string | null;
   status_comment: string | null;
   match_id: number | null;
   match_from_user: number | null;
@@ -250,6 +251,9 @@ export default function MatchList({ user }: { user: LoggedInUser | null }) {
                                 {candidate.faculty || '学部未設定'}{candidate.circle ? ` / ${candidate.circle}` : ''}
                               </Text>
                             </Flex>
+                            {candidate.status_location && (
+                              <Text fontSize="xs" color="violet.600" fontWeight="bold">📍 {candidate.status_location}</Text>
+                            )}
                             {candidate.status_comment && (
                               <Text fontSize="sm" color="gray.700">「{candidate.status_comment}」</Text>
                             )}

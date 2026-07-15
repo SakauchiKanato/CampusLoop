@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input, NativeSelect } from '@yamada-ui/react';
+import { Box, Flex, VStack, Heading, Text, Button, IconButton, Input, NativeSelect, Wrap } from '@yamada-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import type { LoggedInUser, UserStatus } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost } from '../lib/api';
+import { LOCATION_OPTIONS } from '../lib/locations';
 
 interface Props {
   user: LoggedInUser | null;
@@ -13,6 +14,7 @@ interface Props {
 export default function StatusSetting({ user, onStatusUpdated }: Props) {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'free' | 'chat' | 'busy'>('free');
+  const [location, setLocation] = useState('');
   const [comment, setComment] = useState('');
   const [duration, setDuration] = useState('1');
   const [saving, setSaving] = useState(false);
@@ -28,6 +30,7 @@ export default function StatusSetting({ user, onStatusUpdated }: Props) {
         );
         if (res.success && res.status && res.status.is_active) {
           setStatus(res.status.level);
+          setLocation(res.status.location ?? '');
           setComment(res.status.comment ?? '');
         }
       } catch {
@@ -44,6 +47,7 @@ export default function StatusSetting({ user, onStatusUpdated }: Props) {
       const res = await apiPost<{ success: boolean; message?: string }>(API_ENDPOINTS.status, {
         user_id: user.id,
         level: status,
+        location,
         comment,
         hours: Number(duration),
       });
@@ -106,6 +110,24 @@ export default function StatusSetting({ user, onStatusUpdated }: Props) {
       </VStack>
 
       <Box w="full" h="1px" bg="gray.200" />
+
+      <Box>
+        <Text fontSize="sm" fontWeight="bold" mb="sm">📍 今いる場所（任意）</Text>
+        <Wrap gap="xs">
+          {LOCATION_OPTIONS.map((loc) => (
+            <Button
+              key={loc}
+              size="sm"
+              borderRadius="full"
+              variant={location === loc ? 'solid' : 'outline'}
+              colorScheme={location === loc ? 'violet' : 'gray'}
+              onClick={() => setLocation(location === loc ? '' : loc)}
+            >
+              {loc}
+            </Button>
+          ))}
+        </Wrap>
+      </Box>
 
       <Box>
         <Text fontSize="sm" fontWeight="bold" mb="sm">✍ 一言コメント（任意）</Text>

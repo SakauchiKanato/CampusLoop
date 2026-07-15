@@ -41,6 +41,7 @@ CREATE TABLE statuses (
     id          SERIAL PRIMARY KEY,
     user_id     INTEGER      NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     level       VARCHAR(20)  NOT NULL CHECK (level IN ('free', 'chat', 'busy')), -- 'free'=誰でもおいで, 'chat'=ゆる募, 'busy'=ガチ勉強中
+    location    VARCHAR(50)  DEFAULT NULL,                                      -- 今いる場所タグ（学食・図書館など。api/status.php の LOCATION_OPTIONS 参照）
     comment     TEXT         DEFAULT NULL,                                      -- 一言コメント
     expires_at  TIMESTAMP    NOT NULL                                           -- ステータス有効期限
 );
