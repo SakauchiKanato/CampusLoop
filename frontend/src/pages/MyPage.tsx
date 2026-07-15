@@ -63,16 +63,19 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
     setIsSearching(true);
     setAddMessage(null);
     try {
-      const res = await apiGet<{ success: boolean; users?: SearchedUser[] }>(
+      const res = await apiGet<{ success: boolean; users?: SearchedUser[]; message?: string }>(
         `${API_ENDPOINTS.friends}?search=1&q=${encodeURIComponent(searchQuery)}&exclude_id=${user!.id}`
       );
       if (res.success && res.users) {
         setSearchResults(res.users);
       } else {
+        // 失敗理由（ログイン切れ等）を握りつぶさず、常に検出できるようにする
         setSearchResults([]);
+        setAddMessage({ type: 'error', text: res.message || '検索に失敗しました。' });
       }
-    } catch {
+    } catch (err) {
       setSearchResults([]);
+      setAddMessage({ type: 'error', text: err instanceof Error ? err.message : '検索に失敗しました。' });
     } finally {
       setIsSearching(false);
     }
