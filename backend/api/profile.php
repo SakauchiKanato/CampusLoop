@@ -71,7 +71,7 @@ if (empty($updates)) {
     exit;
 }
 
-$sql = 'UPDATE users SET ' . implode(', ', $updates) . ' WHERE id = :id RETURNING id, username, campus, faculty, circle';
+$sql = 'UPDATE users SET ' . implode(', ', $updates) . ' WHERE id = :id RETURNING id, username, campus, faculty, circle, avatar_url';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $updated = $stmt->fetch();
@@ -79,10 +79,11 @@ $updated = $stmt->fetch();
 echo json_encode([
     'success' => true,
     'user'    => [
-        'id'       => (int)$updated['id'],
-        'username' => $updated['username'],
-        'campus'   => $updated['campus'],
-        'faculty'  => $updated['faculty'],
-        'circle'   => $updated['circle'],
+        'id'         => (int)$updated['id'],
+        'username'   => $updated['username'],
+        'campus'     => $updated['campus'],
+        'faculty'    => $updated['faculty'],
+        'circle'     => $updated['circle'],
+        'avatar_url' => $updated['avatar_url'],
     ]
 ]);

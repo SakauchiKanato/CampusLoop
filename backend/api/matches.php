@@ -35,7 +35,7 @@ $pdo->exec('DELETE FROM matches WHERE created_at < CURRENT_DATE');
 // ==============================
 if ($method === 'GET' && isset($_GET['pending'])) {
     $stmt = $pdo->prepare(
-        'SELECT m.id AS match_id, m.period, m.from_user, u.username AS from_username
+        'SELECT m.id AS match_id, m.period, m.from_user, u.username AS from_username, u.avatar_url AS from_avatar_url
          FROM matches m
          JOIN users u ON m.from_user = u.id
          WHERE m.to_user = :uid AND m.status = \'pending\' AND m.created_at >= CURRENT_DATE
