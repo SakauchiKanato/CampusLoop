@@ -38,7 +38,7 @@ export default function Login({ onLogin, onGoRegister }: { onLogin: (user: Logge
         <VStack as="form" onSubmit={handleSubmit} gap="md">
           <Box textAlign="center" mb="md">
             <Text fontSize="4xl" lineHeight="1">⚡</Text>
-            <Heading as="h1" size="lg" color="violet.600" mb="xs">スキマッチ</Heading>
+            <Heading as="h1" size="lg" color="violet.600" mb="xs">MULoop</Heading>
             <Text color="gray.500" fontSize="sm">空きコマを、いちばん楽しい時間に。</Text>
           </Box>
 
