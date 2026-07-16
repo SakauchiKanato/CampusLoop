@@ -8,7 +8,7 @@
  *    友達追加機能で実際のユーザー同士をつなげてください。
  *
  * 実行方法:
- * - ブラウザからアクセス: http://<サーバーURL>/CampusLoop/backend/db/init_db.php
+ * - ブラウザからアクセス: http://<サーバーURL>/MULoop/backend/db/init_db.php
  * - CLIから実行: php init_db.php
  *
  * ⚠ 注意: 既存のテーブルとデータはすべて削除されます。

@@ -4,8 +4,8 @@
 const isProd = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 
 export const API_BASE = isProd
-  ? '/~knt416/CampusLoop/backend/api' // 大学サーバー上のパス
-  : 'http://localhost:8080/CampusLoop/backend/api'; // ローカル開発用のPHPサーバー
+  ? '/~knt416/MULoop/backend/api' // 大学サーバー上のパス
+  : 'http://localhost:8080/MULoop/backend/api'; // ローカル開発用のPHPサーバー
 
 // backend/ 直下（api/ の1つ上）。avatar_url など静的ファイルの参照に使う。
 export const BACKEND_ROOT = API_BASE.replace(/\/api$/, '');
