@@ -17,8 +17,8 @@ createdb -O knt416 knt416
 
 ## 2. PHP サーバーを起動する（ポート8080）
 
-フロントは `http://localhost:8080/CampusLoop/backend/api/...` にアクセスするため、
-**CampusLoop の1つ上のディレクトリ**（mirai-pj）から起動します。
+フロントは `http://localhost:8080/MULoop/backend/api/...` にアクセスするため、
+**MULoop の1つ上のディレクトリ**（mirai-pj）から起動します。
 
 ```bash
 cd ~/ishibashiken/mirai-pj
@@ -32,7 +32,7 @@ php -S localhost:8080
 PHPサーバー起動後、ブラウザで開く：
 
 ```
-http://localhost:8080/CampusLoop/backend/db/init_db.php
+http://localhost:8080/MULoop/backend/db/init_db.php
 ```
 
 ⚠ 既存のテーブルとデータはすべて削除されます。デモユーザーは投入されないので、
@@ -41,7 +41,7 @@ http://localhost:8080/CampusLoop/backend/db/init_db.php
 ## 3. フロントエンドを起動する
 
 ```bash
-cd ~/ishibashiken/mirai-pj/CampusLoop/frontend
+cd ~/ishibashiken/mirai-pj/MULoop/frontend
 npm run dev
 ```
 

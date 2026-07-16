@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-// HashRouter を使用：大学サーバーのサブディレクトリ（/~knt416/CampusLoop/...）配下でも
+// HashRouter を使用：大学サーバーのサブディレクトリ（/~knt416/MULoop/...）配下でも
 // サーバー側のリライト設定なしでページ更新・直リンクが動作する
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Flex, Text } from '@yamada-ui/react';
