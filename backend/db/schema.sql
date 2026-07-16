@@ -1,4 +1,4 @@
--- スキマッチ (SukimaMatch) データベース定義 (PostgreSQL)
+-- MULoop データベース定義 (PostgreSQL)
 --
 
 DROP TABLE IF EXISTS event_participants CASCADE;

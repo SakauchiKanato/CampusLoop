@@ -94,7 +94,7 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
         <Flex align="center" gap="sm">
           <Text fontSize="2xl">⚡</Text>
           <Box>
-            <Text fontSize="xl" fontWeight="bold" color="white" letterSpacing="-0.5px" lineHeight="1.2">スキマッチ</Text>
+            <Text fontSize="xl" fontWeight="bold" color="white" letterSpacing="-0.5px" lineHeight="1.2">MULoop</Text>
             <Text fontSize="2xs" color="whiteAlpha.800">空きコマを、いちばん楽しい時間に。</Text>
           </Box>
         </Flex>
@@ -214,7 +214,7 @@ function Layout({ user, userStatus, onLogout, onProfileUpdate, onStatusUpdated }
 }
 
 // ログイン状態の保存キー（リロードしてもログアウトされないように localStorage に保持）
-const STORAGE_KEY = 'campusloop_user';
+const STORAGE_KEY = 'muloop_user';
 
 const loadSavedUser = (): LoggedInUser | null => {
   try {

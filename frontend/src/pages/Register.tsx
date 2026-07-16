@@ -75,7 +75,7 @@ export default function Register({ onRegister, onGoLogin }: { onRegister: (user:
         <VStack as="form" onSubmit={handleSubmit} gap="md">
           <Box textAlign="center" mb="sm">
             <Text fontSize="4xl" lineHeight="1">⚡</Text>
-            <Heading as="h1" size="lg" color="violet.600" mb="xs">スキマッチ</Heading>
+            <Heading as="h1" size="lg" color="violet.600" mb="xs">MULoop</Heading>
             <Text color="gray.500" fontSize="sm">新規アカウント登録</Text>
           </Box>
 

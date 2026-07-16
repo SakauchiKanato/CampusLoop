@@ -1,5 +1,5 @@
 {
-  "name": "campusloop-root",
+  "name": "muloop-root",
   "private": true,
   "scripts": {
     "dev": "npm --prefix frontend run dev",
