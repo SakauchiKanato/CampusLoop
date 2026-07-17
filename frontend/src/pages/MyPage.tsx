@@ -221,6 +221,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
 
       {/* 友達追加モーダル */}
       <Modal.Root open={isModalOpen} onClose={closeModal} size="md">
+        <Modal.Content>
         <Modal.Header>友達を追加</Modal.Header>
         <Modal.Body pb="lg">
           <VStack gap="md" align="stretch">
@@ -295,6 +296,7 @@ export default function MyPage({ user, onLogout }: { user: LoggedInUser | null; 
             )}
           </VStack>
         </Modal.Body>
+        </Modal.Content>
       </Modal.Root>
     </VStack>
   );
