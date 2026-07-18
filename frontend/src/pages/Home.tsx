@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost, apiPut, apiDelete, resolveAvatarUrl } from '../lib/api';
 import { getCurrentPeriod } from '../lib/periods';
+import { checkWithinCampusRadius, campusCheckMessage } from '../lib/geolocation';
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 const WEEKDAY_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
@@ -235,6 +236,12 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
 
   const handleInvite = async (toUserId: number) => {
     if (!matchPeriod) return;
+    // 誘いを送るのはキャンパス内にいるときのみ
+    const check = await checkWithinCampusRadius(user?.campus);
+    if (!check.ok) {
+      alert(campusCheckMessage(check.reason));
+      return;
+    }
     try {
       const res = await apiPost<{ success: boolean; message?: string }>(`${API_ENDPOINTS.matches}`, {
         from_user: user!.id,
@@ -250,6 +257,14 @@ export default function Home({ user }: { user: LoggedInUser | null }) {
 
   // 誘いへの返事（承諾 or 拒否）
   const handleRespond = async (matchId: number, status: 'accepted' | 'rejected') => {
+    // 承諾してチャットに進むのはキャンパス内にいるときのみ（拒否は制限しない）
+    if (status === 'accepted') {
+      const check = await checkWithinCampusRadius(user?.campus);
+      if (!check.ok) {
+        alert(campusCheckMessage(check.reason));
+        return;
+      }
+    }
     try {
       const res = await apiPut<{ success: boolean; message?: string }>(API_ENDPOINTS.matches, {
         match_id: matchId,

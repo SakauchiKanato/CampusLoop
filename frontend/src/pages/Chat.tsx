@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Send } from 'lucide-react';
 import type { LoggedInUser } from '../App';
 import { API_ENDPOINTS, apiGet, apiPost, resolveAvatarUrl } from '../lib/api';
+import { checkWithinCampusRadius, campusCheckMessage } from '../lib/geolocation';
 
 interface ApiMessage {
   message_id: number;
@@ -77,6 +78,12 @@ export default function Chat({ user }: { user: LoggedInUser | null }) {
 
   const handleSend = async (text: string) => {
     if (!text.trim() || !matchId || !user || sending) return;
+    // メッセージ送信はキャンパス内にいるときのみ
+    const check = await checkWithinCampusRadius(user.campus);
+    if (!check.ok) {
+      alert(campusCheckMessage(check.reason));
+      return;
+    }
     setSending(true);
     try {
       const res = await apiPost<{ success: boolean; message?: ApiMessage }>(API_ENDPOINTS.chat, {
